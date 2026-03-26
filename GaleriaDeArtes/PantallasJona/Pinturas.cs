@@ -1,18 +1,17 @@
+using GaleriaDeArtes.Data;
 using GaleriaDeArtes.PantallasJona;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Windows.Forms;
-using Microsoft.Data.SqlClient;
 
 
 namespace GaleriaDeArtes
 {
     public partial class Pinturas : Form
     {
-        private readonly string connectionString =
-            "Server=BICHITO;Database=GaleriaArte;User Id=sa;Password=Fregoso03;TrustServerCertificate=True;";
-
+     
         private DataTable _tablaPinturas;
 
         public Pinturas()
@@ -50,7 +49,7 @@ namespace GaleriaDeArtes
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlConnection conn = Conexion.ObtenerConexion()) 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
                 {

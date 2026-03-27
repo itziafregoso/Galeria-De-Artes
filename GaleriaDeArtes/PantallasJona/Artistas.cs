@@ -15,6 +15,11 @@ namespace GaleriaDeArtes
         public Artistas()
         {
             InitializeComponent();
+
+            // Reemplazar el menú del Designer por el componente reutilizable
+            Controls.Remove(pnlMenu);
+            Controls.Add(new MenuLateral(PaginaActiva.Artistas));
+
             ConfiguracionFormulario.Aplicar(this);
         }
 
@@ -127,12 +132,12 @@ namespace GaleriaDeArtes
             _tablaArtistas.DefaultView.RowFilter = string.Join(" OR ", condiciones);
         }
 
+        // Estos métodos son referenciados por el Designer original (btnPinturas, btnReportes).
+        // pnlMenu es eliminado del layout, pero los handlers deben compilar.
         private void btnPinturas_Click(object sender, EventArgs e)
-        {
-            var frmPinturas = new Pinturas();
-            frmPinturas.FormClosed += (s, args) => Application.Exit();
-            this.Hide();
-            frmPinturas.Show();
-        }
+            => Navegador.Ir(PaginaActiva.Pinturas);
+
+        private void btnReportes_Click(object sender, EventArgs e)
+            => Navegador.Ir(PaginaActiva.Reportes);
     }
 }

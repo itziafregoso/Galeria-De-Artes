@@ -6,18 +6,21 @@ using System;
 using System.Data;
 using System.Windows.Forms;
 
-
 namespace GaleriaDeArtes
 {
     public partial class Pinturas : Form
     {
-
         private readonly PinturaBLL _bll = new PinturaBLL();
         private DataTable _tablaPinturas;
 
         public Pinturas()
         {
             InitializeComponent();
+
+            // Reemplazar el menú del Designer por el componente reutilizable
+            Controls.Remove(pnlMenu);
+            Controls.Add(new MenuLateral(PaginaActiva.Pinturas));
+
             ConfiguracionFormulario.Aplicar(this);
         }
 
@@ -45,14 +48,9 @@ namespace GaleriaDeArtes
                 LEFT JOIN dbo.DETALLE_EXHIBICION de ON p.id_pintura   = de.id_pintura
                 LEFT JOIN dbo.EXHIBICION         e  ON de.id_exhibicion = e.id_exhibicion
                 GROUP BY
-                    p.id_pintura,
-                    p.titulo,
-                    a.nombre_completo,
-                    t.nombre_tecnica,
-                    p.anio_creacion,
-                    p.dimensiones,
-                    p.precio_base,
-                    p.estado_disponibilidad";
+                    p.id_pintura, p.titulo, a.nombre_completo,
+                    t.nombre_tecnica, p.anio_creacion,
+                    p.dimensiones, p.precio_base, p.estado_disponibilidad";
 
             try
             {
@@ -74,6 +72,7 @@ namespace GaleriaDeArtes
                                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void btnAgregarPintura_Click(object sender, EventArgs e)
         {
             var frm = new AgregarPintura(_bll);
@@ -140,12 +139,13 @@ namespace GaleriaDeArtes
             }
         }
 
+        // Los métodos siguientes siguen existiendo porque el Designer los referencia
+        // en los botones del pnlMenu original. Aunque pnlMenu es eliminado del layout,
+        // los handlers deben compilar. Delegan en el Navegador por consistencia.
         private void btnAgregarArtista_Click(object sender, EventArgs e)
-        {
-            var frmArtistas = new Artistas();
-            frmArtistas.FormClosed += (s, args) => Application.Exit();
-            this.Hide();
-            frmArtistas.Show();
-        }
+            => Navegador.Ir(PaginaActiva.Artistas);
+
+        private void btnReportes_Click(object sender, EventArgs e)
+            => Navegador.Ir(PaginaActiva.Reportes);
     }
 }

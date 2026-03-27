@@ -17,6 +17,7 @@ namespace GaleriaDeArtes
         {
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             pnlMenu = new Panel();
+            btnArtistas = new Button();
             btnPinturas = new Button();
             PnlPrincipal = new Panel();
             btnEliminarArtista = new Button();
@@ -24,6 +25,7 @@ namespace GaleriaDeArtes
             btnAgregarArtista = new Button();
             txtBuscar = new TextBox();
             dgvArtistas = new DataGridView();
+            btnProveedor = new Button();
             pnlMenu.SuspendLayout();
             PnlPrincipal.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvArtistas).BeginInit();
@@ -32,6 +34,8 @@ namespace GaleriaDeArtes
             // pnlMenu
             // 
             pnlMenu.BackColor = Color.FromArgb(21, 77, 113);
+            pnlMenu.Controls.Add(btnProveedor);
+            pnlMenu.Controls.Add(btnArtistas);
             pnlMenu.Controls.Add(btnPinturas);
             pnlMenu.Dock = DockStyle.Left;
             pnlMenu.Location = new Point(0, 0);
@@ -39,15 +43,35 @@ namespace GaleriaDeArtes
             pnlMenu.Size = new Size(188, 721);
             pnlMenu.TabIndex = 0;
             // 
+            // btnArtistas
+            // 
+            btnArtistas.BackColor = Color.FromArgb(21, 77, 113);
+            btnArtistas.BackgroundImageLayout = ImageLayout.None;
+            btnArtistas.Dock = DockStyle.Top;
+            btnArtistas.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnArtistas.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnArtistas.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
+            btnArtistas.FlatStyle = FlatStyle.Flat;
+            btnArtistas.ForeColor = Color.White;
+            btnArtistas.Location = new Point(0, 60);
+            btnArtistas.Name = "btnArtistas";
+            btnArtistas.Size = new Size(188, 60);
+            btnArtistas.TabIndex = 4;
+            btnArtistas.Text = "Artistas";
+            btnArtistas.UseVisualStyleBackColor = false;
+            // 
             // btnPinturas
             // 
             btnPinturas.BackColor = Color.FromArgb(21, 77, 113);
+            btnPinturas.Dock = DockStyle.Top;
             btnPinturas.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnPinturas.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnPinturas.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
             btnPinturas.FlatStyle = FlatStyle.Flat;
             btnPinturas.ForeColor = Color.White;
-            btnPinturas.Location = new Point(-6, 0);
+            btnPinturas.Location = new Point(0, 0);
             btnPinturas.Name = "btnPinturas";
-            btnPinturas.Size = new Size(206, 55);
+            btnPinturas.Size = new Size(188, 60);
             btnPinturas.TabIndex = 3;
             btnPinturas.Text = "Pinturas";
             btnPinturas.UseVisualStyleBackColor = false;
@@ -101,6 +125,7 @@ namespace GaleriaDeArtes
             // 
             txtBuscar.Location = new Point(60, 60);
             txtBuscar.Name = "txtBuscar";
+            txtBuscar.PlaceholderText = "Buscar artista...";
             txtBuscar.Size = new Size(279, 27);
             txtBuscar.TabIndex = 1;
             txtBuscar.TextChanged += txtBuscar_TextChanged;
@@ -125,9 +150,26 @@ namespace GaleriaDeArtes
             dgvArtistas.Name = "dgvArtistas";
             dgvArtistas.RowHeadersWidth = 51;
             dgvArtistas.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-            dgvArtistas.Size = new Size(1025, 419);
             dgvArtistas.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvArtistas.Size = new Size(1025, 419);
             dgvArtistas.TabIndex = 0;
+            // 
+            // btnProveedor
+            // 
+            btnProveedor.BackColor = Color.FromArgb(21, 77, 113);
+            btnProveedor.BackgroundImageLayout = ImageLayout.None;
+            btnProveedor.Dock = DockStyle.Top;
+            btnProveedor.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnProveedor.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnProveedor.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
+            btnProveedor.FlatStyle = FlatStyle.Flat;
+            btnProveedor.ForeColor = Color.White;
+            btnProveedor.Location = new Point(0, 120);
+            btnProveedor.Name = "btnProveedor";
+            btnProveedor.Size = new Size(188, 60);
+            btnProveedor.TabIndex = 6;
+            btnProveedor.Text = "Proveedor";
+            btnProveedor.UseVisualStyleBackColor = false;
             // 
             // Artistas
             // 
@@ -156,5 +198,7 @@ namespace GaleriaDeArtes
         private Button btnAgregarArtista;
         private Button btnEditarArtista;
         private Button btnEliminarArtista;
+        private Button btnArtistas;
+        private Button btnProveedor;
     }
 }

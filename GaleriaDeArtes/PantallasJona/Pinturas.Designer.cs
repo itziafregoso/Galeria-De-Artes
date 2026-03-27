@@ -30,14 +30,16 @@
         {
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             pnlMenu = new Panel();
+            btnPinturas = new Button();
             btnArtistas = new Button();
             PnlPrincipal = new Panel();
+            button2 = new Button();
+            button1 = new Button();
             btnCotizaciones = new Button();
             btnAgregarPintura = new Button();
             txtBuscar = new TextBox();
             dgvPinturas = new DataGridView();
-            button1 = new Button();
-            button2 = new Button();
+            btnProveedor = new Button();
             pnlMenu.SuspendLayout();
             PnlPrincipal.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvPinturas).BeginInit();
@@ -46,6 +48,8 @@
             // pnlMenu
             // 
             pnlMenu.BackColor = Color.FromArgb(21, 77, 113);
+            pnlMenu.Controls.Add(btnProveedor);
+            pnlMenu.Controls.Add(btnPinturas);
             pnlMenu.Controls.Add(btnArtistas);
             pnlMenu.Dock = DockStyle.Left;
             pnlMenu.Location = new Point(0, 0);
@@ -53,16 +57,35 @@
             pnlMenu.Size = new Size(188, 721);
             pnlMenu.TabIndex = 0;
             // 
+            // btnPinturas
+            // 
+            btnPinturas.BackColor = Color.FromArgb(21, 77, 113);
+            btnPinturas.Dock = DockStyle.Top;
+            btnPinturas.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnPinturas.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnPinturas.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
+            btnPinturas.FlatStyle = FlatStyle.Flat;
+            btnPinturas.ForeColor = Color.White;
+            btnPinturas.Location = new Point(0, 60);
+            btnPinturas.Name = "btnPinturas";
+            btnPinturas.Size = new Size(188, 60);
+            btnPinturas.TabIndex = 4;
+            btnPinturas.Text = "Pinturas";
+            btnPinturas.UseVisualStyleBackColor = false;
+            // 
             // btnArtistas
             // 
             btnArtistas.BackColor = Color.FromArgb(21, 77, 113);
             btnArtistas.BackgroundImageLayout = ImageLayout.None;
+            btnArtistas.Dock = DockStyle.Top;
             btnArtistas.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnArtistas.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnArtistas.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
             btnArtistas.FlatStyle = FlatStyle.Flat;
             btnArtistas.ForeColor = Color.White;
-            btnArtistas.Location = new Point(-6, 0);
+            btnArtistas.Location = new Point(0, 0);
             btnArtistas.Name = "btnArtistas";
-            btnArtistas.Size = new Size(206, 55);
+            btnArtistas.Size = new Size(188, 60);
             btnArtistas.TabIndex = 3;
             btnArtistas.Text = "Artistas";
             btnArtistas.UseVisualStyleBackColor = false;
@@ -82,6 +105,26 @@
             PnlPrincipal.Name = "PnlPrincipal";
             PnlPrincipal.Size = new Size(1160, 721);
             PnlPrincipal.TabIndex = 1;
+            // 
+            // button2
+            // 
+            button2.Location = new Point(711, 55);
+            button2.Name = "button2";
+            button2.Size = new Size(177, 36);
+            button2.TabIndex = 4;
+            button2.Text = "Eliminar Pintura";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += btnEliminarPintura_Click;
+            // 
+            // button1
+            // 
+            button1.Location = new Point(513, 55);
+            button1.Name = "button1";
+            button1.Size = new Size(177, 36);
+            button1.TabIndex = 3;
+            button1.Text = "Editar Pintura";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += btnEditarPintura_Click;
             // 
             // btnCotizaciones
             // 
@@ -106,6 +149,7 @@
             // 
             txtBuscar.Location = new Point(60, 60);
             txtBuscar.Name = "txtBuscar";
+            txtBuscar.PlaceholderText = "Buscar pintura...";
             txtBuscar.Size = new Size(230, 27);
             txtBuscar.TabIndex = 1;
             txtBuscar.TextChanged += txtBuscar_TextChanged;
@@ -130,29 +174,26 @@
             dgvPinturas.Name = "dgvPinturas";
             dgvPinturas.RowHeadersWidth = 51;
             dgvPinturas.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-            dgvPinturas.Size = new Size(1025, 419);
             dgvPinturas.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvPinturas.Size = new Size(1025, 419);
             dgvPinturas.TabIndex = 0;
             // 
-            // button1
+            // btnProveedor
             // 
-            button1.Location = new Point(513, 55);
-            button1.Name = "button1";
-            button1.Size = new Size(177, 36);
-            button1.TabIndex = 3;
-            button1.Text = "Editar Pintura";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += btnEditarPintura_Click;
-            //
-            // button2
-            //
-            button2.Location = new Point(711, 55);
-            button2.Name = "button2";
-            button2.Size = new Size(177, 36);
-            button2.TabIndex = 4;
-            button2.Text = "Eliminar Pintura";
-            button2.UseVisualStyleBackColor = true;
-            button2.Click += btnEliminarPintura_Click;
+            btnProveedor.BackColor = Color.FromArgb(21, 77, 113);
+            btnProveedor.BackgroundImageLayout = ImageLayout.None;
+            btnProveedor.Dock = DockStyle.Top;
+            btnProveedor.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnProveedor.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnProveedor.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
+            btnProveedor.FlatStyle = FlatStyle.Flat;
+            btnProveedor.ForeColor = Color.White;
+            btnProveedor.Location = new Point(0, 120);
+            btnProveedor.Name = "btnProveedor";
+            btnProveedor.Size = new Size(188, 60);
+            btnProveedor.TabIndex = 5;
+            btnProveedor.Text = "Proveedor";
+            btnProveedor.UseVisualStyleBackColor = false;
             // 
             // Pinturas
             // 
@@ -183,5 +224,7 @@
         private Button btnArtistas;
         private Button button2;
         private Button button1;
+        private Button btnPinturas;
+        private Button btnProveedor;
     }
 }

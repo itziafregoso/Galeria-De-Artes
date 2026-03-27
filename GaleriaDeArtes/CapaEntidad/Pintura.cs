@@ -8,5 +8,7 @@ namespace GaleriaDeArtes.CapaEntidad
         public string EstadoDisponibilidad { get; set; } = string.Empty;
         public int IdArtista { get; set; }
         public int IdTecnica { get; set; }
+        public int? AnioCreacion { get; set; }
+        public string Dimensiones { get; set; } = string.Empty;
     }
 }

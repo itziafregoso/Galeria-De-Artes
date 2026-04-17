@@ -4,7 +4,7 @@ namespace GaleriaDeArtes.PantallasJona
     /// Página activa del sistema, usada por MenuLateral para resaltar
     /// el botón correspondiente y evitar navegación redundante.
     /// </summary>
-    public enum PaginaActiva { Artistas, Pinturas, Proveedor, Reportes }
+    public enum PaginaActiva { Artistas, Pinturas, Proveedor, Reportes, Exhibiciones }
 
     /// <summary>
     /// Menú lateral reutilizable. Se instancia pasando la página activa;
@@ -27,10 +27,11 @@ namespace GaleriaDeArtes.PantallasJona
 
             // El orden de Add con Dock=Top sigue el patrón establecido en Reportes:
             // primer Control.Add → botón más arriba.
-            Controls.Add(Boton("Artistas",  0,   PaginaActiva.Artistas,  activa));
-            Controls.Add(Boton("Pinturas",  60,  PaginaActiva.Pinturas,  activa));
-            Controls.Add(Boton("Proveedor", 120, PaginaActiva.Proveedor, activa));
-            Controls.Add(Boton("Reportes",  180, PaginaActiva.Reportes,  activa));
+            Controls.Add(Boton("Artistas",     0,   PaginaActiva.Artistas,     activa));
+            Controls.Add(Boton("Pinturas",     60,  PaginaActiva.Pinturas,     activa));
+            Controls.Add(Boton("Proveedor",    120, PaginaActiva.Proveedor,    activa));
+            Controls.Add(Boton("Reportes",     180, PaginaActiva.Reportes,     activa));
+            Controls.Add(Boton("Exhibiciones", 240, PaginaActiva.Exhibiciones, activa));
         }
 
         private static Button Boton(string texto, int top, PaginaActiva pagina, PaginaActiva activa)

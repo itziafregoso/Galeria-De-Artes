@@ -1,25 +1,22 @@
 namespace GaleriaDeArtes.CapaEntidad.Reportes
 {
-    /// <summary>
-    /// Parámetros opcionales de filtrado para el reporte de catálogo general.
-    /// Todos los campos son nullables; solo se aplican los que tengan valor.
-    /// </summary>
-    public class FiltroPintura
+    /// <summary>Filtro de rango de fechas usado en reportes de ventas.</summary>
+    public class FiltroFechas
     {
-        public int?     IdArtista             { get; set; }
-        public string?  EstadoDisponibilidad  { get; set; }
-        public int?     AnioDesde             { get; set; }
-        public int?     AnioHasta             { get; set; }
-        public decimal? PrecioMinimo          { get; set; }
-        public decimal? PrecioMaximo          { get; set; }
+        public DateTime? FechaDesde { get; set; }
+        public DateTime? FechaHasta { get; set; }
 
-        /// <summary>Devuelve true si hay al menos un filtro activo.</summary>
-        public bool TieneFiltros =>
-            IdArtista.HasValue            ||
-            !string.IsNullOrEmpty(EstadoDisponibilidad) ||
-            AnioDesde.HasValue            ||
-            AnioHasta.HasValue            ||
-            PrecioMinimo.HasValue         ||
-            PrecioMaximo.HasValue;
+        public bool TieneFiltros => FechaDesde.HasValue || FechaHasta.HasValue;
+    }
+
+    /// <summary>Filtro de mes y año para el reporte Ventas por Mes.</summary>
+    public class FiltroMes
+    {
+        public int Mes  { get; set; }
+        public int Anio { get; set; }
+
+        public string NombreMes =>
+            new System.Globalization.CultureInfo("es-MX")
+                .DateTimeFormat.GetMonthName(Mes);
     }
 }

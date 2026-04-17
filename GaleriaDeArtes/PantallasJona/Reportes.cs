@@ -1,5 +1,3 @@
-using GaleriaDeArtes.CapaDatos;
-using GaleriaDeArtes.CapaEntidad;
 using GaleriaDeArtes.CapaEntidad.Reportes;
 using GaleriaDeArtes.CapaNegocio;
 using GaleriaDeArtes.ModuloReportes;
@@ -16,18 +14,17 @@ namespace GaleriaDeArtes.PantallasJona
         private static readonly Color Blanco     = Color.White;
 
         // ── Controles ─────────────────────────────────────────────────────────
-        private ComboBox      cboTipoReporte   = null!;
-        private GroupBox      grpFiltros       = null!;
-        private ComboBox      cboFiltroArtista = null!;
-        private ComboBox      cboFiltroEstado  = null!;
-        private NumericUpDown nudAnioDesde     = null!;
-        private NumericUpDown nudAnioHasta     = null!;
-        private TextBox       txtPrecioMin     = null!;
-        private TextBox       txtPrecioMax     = null!;
-        private Label         lblDescripcion   = null!;
-        private Button        btnGenerar       = null!;
-        private Button        btnGuardar       = null!;
-        private ProgressBar   progressBar      = null!;
+        private ComboBox        cboTipoReporte = null!;
+        private GroupBox        grpFiltros     = null!;
+        private DateTimePicker  dtpFechaDesde  = null!;
+        private DateTimePicker  dtpFechaHasta  = null!;
+        private GroupBox        grpFiltroMes   = null!;
+        private ComboBox        cboMes         = null!;
+        private ComboBox        cboAnio        = null!;
+        private Label           lblDescripcion = null!;
+        private Button          btnGenerar     = null!;
+        private Button          btnGuardar     = null!;
+        private ProgressBar     progressBar    = null!;
 
         // ── Lógica ────────────────────────────────────────────────────────────
         private readonly ReporteBLL _bll = new ReporteBLL();
@@ -35,23 +32,29 @@ namespace GaleriaDeArtes.PantallasJona
 
         private static readonly string[] Descripciones =
         {
-            "Lista completa de todas las pinturas con artista, técnica, precio y estado.\n" +
-            "Admite filtros por artista, estado de disponibilidad, rango de años y precio.",
+            "Lista todas las ventas dentro de un rango de fechas.\n" +
+            "Muestra la pintura vendida, el cliente, la fecha y el precio.\n" +
+            "Filtra por fecha de inicio y fecha de fin.",
 
-            "Agrupación de obras por artista: total de pinturas, valor acumulado\n" +
-            "y precio promedio. Ordenado de mayor a menor productividad.",
+            "Ranking de las 10 pinturas con mayor número de ventas.\n" +
+            "Ordenadas de forma descendente por cantidad de ventas.\n" +
+            "Incluye el ingreso total generado por cada obra.",
 
-            "Distribución de pinturas según la técnica pictórica utilizada.\n" +
-            "Muestra cantidad, valor total y porcentaje sobre el total.",
+            "Existencias actuales de todas las pinturas del catálogo.\n" +
+            "Muestra título, artista, técnica, dimensiones, precio y estado\n" +
+            "(Disponible / Vendida / Reservada).",
 
-            "Resumen financiero del inventario agrupado por estado\n" +
-            "(Disponible / Vendida / Reservada) con valor total y participación.",
+            "Resumen de compras agrupadas por proveedor.\n" +
+            "Incluye número de transacciones, monto total acumulado\n" +
+            "y fecha de la última compra por proveedor.",
 
-            "Vista ejecutiva en una sola página: KPIs principales, estado del\n" +
-            "inventario y datos destacados de la galería.",
+            "Total de compras realizadas por cada cliente.\n" +
+            "Ordenado de mayor a menor gasto acumulado.\n" +
+            "Incluye número de obras adquiridas y monto total.",
 
-            "Detalle de las pinturas incluidas en cada exhibición registrada,\n" +
-            "con información de artista, técnica, precio y estado."
+            "Ventas del mes y año seleccionados.\n" +
+            "Muestra cantidad de ventas e ingresos del periodo.\n" +
+            "Selecciona mes y año para filtrar el resultado."
         };
 
         public Reportes()
@@ -59,7 +62,6 @@ namespace GaleriaDeArtes.PantallasJona
             ConfiguracionFormulario.Aplicar(this);
             Text = "Módulo de Reportes — Galería de Artes";
             InicializarComponentes();
-            CargarArtistasEnFiltro();
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -68,7 +70,7 @@ namespace GaleriaDeArtes.PantallasJona
 
         private void InicializarComponentes()
         {
-            // ── Panel izquierdo: selección y filtros ──────────────────────────
+            // ── Panel izquierdo ───────────────────────────────────────────────
             var panelIzq = new Panel
             {
                 Width     = 310,
@@ -108,102 +110,122 @@ namespace GaleriaDeArtes.PantallasJona
             };
             cboTipoReporte.Items.AddRange(new object[]
             {
-                "1. Catálogo General de Pinturas",
-                "2. Resumen por Artista",
-                "3. Análisis por Técnica",
-                "4. Inventario por Estado",
-                "5. Resumen Ejecutivo",
-                "6. Pinturas por Exhibición"
+                "1. Ventas por Periodo",
+                "2. Top 10 Pinturas Más Vendidas",
+                "3. Inventario Actual",
+                "4. Compras por Proveedor",
+                "5. Ventas por Cliente",
+                "6. Ventas por Mes"
             });
             cboTipoReporte.SelectedIndexChanged += CboTipoReporte_SelectedIndexChanged;
 
-            // ── GroupBox de filtros (solo para reporte 1) ─────────────────────
+            // ── GroupBox de filtros (solo para Ventas por Periodo) ────────────
             grpFiltros = new GroupBox
             {
-                Text      = "Filtros opcionales",
+                Text      = "Filtros de fecha",
                 Left      = 10,
                 Top       = 105,
                 Width     = 284,
-                Height    = 270,
+                Height    = 168,          // espacio para 2 pickers + botón cómodo
                 Font      = new Font("Segoe UI", 8.5f, FontStyle.Bold),
                 ForeColor = Navy,
                 Visible   = false
             };
 
-            int fy = 22;
+            // Fecha inicio ─────────────────────────────────────────────────────
+            grpFiltros.Controls.Add(Etiqueta("Fecha inicio:", 10, 22));
+            dtpFechaDesde = new DateTimePicker
+            {
+                Left   = 10, Top = 40, Width = 260,
+                Format = DateTimePickerFormat.Short,
+                Value  = DateTime.Now.AddMonths(-1),
+                Font   = new Font("Segoe UI", 9F)
+            };
+            grpFiltros.Controls.Add(dtpFechaDesde);
 
-            grpFiltros.Controls.Add(Etiqueta("Artista:", 10, fy));
-            cboFiltroArtista = new ComboBox
+            // Fecha fin ────────────────────────────────────────────────────────
+            grpFiltros.Controls.Add(Etiqueta("Fecha fin:", 10, 78));
+            dtpFechaHasta = new DateTimePicker
             {
-                Left = 10, Top = fy + 18, Width = 260,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = new Font("Segoe UI", 9F)
+                Left   = 10, Top = 96, Width = 260,
+                Format = DateTimePickerFormat.Short,
+                Value  = DateTime.Now,
+                Font   = new Font("Segoe UI", 9F)
             };
-            grpFiltros.Controls.Add(cboFiltroArtista);
+            grpFiltros.Controls.Add(dtpFechaHasta);
 
-            fy += 52;
-            grpFiltros.Controls.Add(Etiqueta("Estado de disponibilidad:", 10, fy));
-            cboFiltroEstado = new ComboBox
-            {
-                Left = 10, Top = fy + 18, Width = 260,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = new Font("Segoe UI", 9F)
-            };
-            cboFiltroEstado.Items.AddRange(new object[]
-                { "(Todos)", "Disponible", "Vendida", "Reservada" });
-            cboFiltroEstado.SelectedIndex = 0;
-            grpFiltros.Controls.Add(cboFiltroEstado);
-
-            fy += 52;
-            grpFiltros.Controls.Add(Etiqueta("Año creación (desde — hasta):", 10, fy));
-            nudAnioDesde = new NumericUpDown
-            {
-                Left = 10, Top = fy + 18, Width = 120,
-                Minimum = 1400, Maximum = DateTime.Now.Year,
-                Value = 1900, Font = new Font("Segoe UI", 9F)
-            };
-            nudAnioHasta = new NumericUpDown
-            {
-                Left = 140, Top = fy + 18, Width = 130,
-                Minimum = 1400, Maximum = DateTime.Now.Year,
-                Value = DateTime.Now.Year, Font = new Font("Segoe UI", 9F)
-            };
-            grpFiltros.Controls.Add(nudAnioDesde);
-            grpFiltros.Controls.Add(nudAnioHasta);
-
-            fy += 52;
-            grpFiltros.Controls.Add(Etiqueta("Precio (mín. — máx.):", 10, fy));
-            txtPrecioMin = new TextBox
-            {
-                Left = 10, Top = fy + 18, Width = 120,
-                Font = new Font("Segoe UI", 9F), PlaceholderText = "Mínimo"
-            };
-            txtPrecioMax = new TextBox
-            {
-                Left = 140, Top = fy + 18, Width = 130,
-                Font = new Font("Segoe UI", 9F), PlaceholderText = "Máximo"
-            };
-            grpFiltros.Controls.Add(txtPrecioMin);
-            grpFiltros.Controls.Add(txtPrecioMax);
-
-            fy += 52;
+            // Botón restablecer ────────────────────────────────────────────────
+            // Alineado con ambos pickers (mismo Left/Width), 12 px de separación
+            // respecto al picker anterior. Height=28 para área de clic cómoda.
             var btnLimpiar = new Button
             {
-                Text = "Limpiar filtros",
-                Left = 10, Top = fy, Width = 260, Height = 28,
+                Text      = "↺  Restablecer fechas",
+                Left      = 10,
+                Top       = 132,
+                Width     = 260,
+                Height    = 28,
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 8.5f),
+                Font      = new Font("Segoe UI", 8.5f),
                 ForeColor = Navy,
-                BackColor = Blanco
+                BackColor = Color.FromArgb(225, 238, 250),   // azul muy suave
+                Cursor    = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            btnLimpiar.FlatAppearance.BorderColor = Blue;
-            btnLimpiar.Click += (_, __) => LimpiarFiltros();
+            btnLimpiar.FlatAppearance.BorderColor        = Blue;
+            btnLimpiar.FlatAppearance.BorderSize         = 1;
+            btnLimpiar.FlatAppearance.MouseOverBackColor = Color.FromArgb(197, 220, 240);
+            btnLimpiar.Click += (_, __) =>
+            {
+                dtpFechaDesde.Value = DateTime.Now.AddMonths(-1);
+                dtpFechaHasta.Value = DateTime.Now;
+            };
             grpFiltros.Controls.Add(btnLimpiar);
+
+            // ── GroupBox de filtros de mes/año (solo para Ventas por Mes) ────────
+            grpFiltroMes = new GroupBox
+            {
+                Text      = "Filtros de mes y año",
+                Left      = 10,
+                Top       = 105,
+                Width     = 284,
+                Height    = 130,
+                Font      = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+                ForeColor = Navy,
+                Visible   = false
+            };
+
+            grpFiltroMes.Controls.Add(Etiqueta("Mes:", 10, 22));
+            cboMes = new ComboBox
+            {
+                Left          = 10, Top = 40, Width = 260,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font          = new Font("Segoe UI", 9F)
+            };
+            cboMes.Items.AddRange(new object[]
+            {
+                "01 - Enero",   "02 - Febrero", "03 - Marzo",    "04 - Abril",
+                "05 - Mayo",    "06 - Junio",   "07 - Julio",    "08 - Agosto",
+                "09 - Septiembre", "10 - Octubre", "11 - Noviembre", "12 - Diciembre"
+            });
+            cboMes.SelectedIndex = DateTime.Now.Month - 1;
+            grpFiltroMes.Controls.Add(cboMes);
+
+            grpFiltroMes.Controls.Add(Etiqueta("Año:", 10, 72));
+            cboAnio = new ComboBox
+            {
+                Left          = 10, Top = 90, Width = 260,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font          = new Font("Segoe UI", 9F)
+            };
+            for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 5; y--)
+                cboAnio.Items.Add(y);
+            cboAnio.SelectedIndex = 0;
+            grpFiltroMes.Controls.Add(cboAnio);
 
             btnGenerar = new Button
             {
                 Text      = "Generar y Abrir PDF",
-                Left      = 16, Top = 390, Width = 278, Height = 38,
+                Left      = 16, Top = 284, Width = 278, Height = 38,
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = Blanco,
@@ -218,7 +240,7 @@ namespace GaleriaDeArtes.PantallasJona
             btnGuardar = new Button
             {
                 Text      = "Guardar PDF en...",
-                Left      = 16, Top = 436, Width = 278, Height = 34,
+                Left      = 16, Top = 330, Width = 278, Height = 34,
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 9.5f),
                 ForeColor = Navy,
@@ -232,13 +254,14 @@ namespace GaleriaDeArtes.PantallasJona
 
             progressBar = new ProgressBar
             {
-                Left = 16, Top = 476, Width = 278, Height = 12,
+                Left = 16, Top = 371, Width = 278, Height = 12,
                 Style = ProgressBarStyle.Marquee, Visible = false
             };
 
             panelIzq.Controls.AddRange(new Control[]
             {
-                lblPanelTitulo, lblTipo, cboTipoReporte, grpFiltros,
+                lblPanelTitulo, lblTipo, cboTipoReporte,
+                grpFiltros, grpFiltroMes,
                 btnGenerar, btnGuardar, progressBar
             });
 
@@ -267,10 +290,12 @@ namespace GaleriaDeArtes.PantallasJona
             {
                 Text =
                     "Instrucciones:\n\n" +
-                    "1. Seleccione el tipo de reporte.\n" +
-                    "2. Configure los filtros si aplica (solo Catálogo General).\n" +
-                    "3. Haga clic en \"Generar y Abrir PDF\" para visualizar.\n" +
-                    "4. Use \"Guardar PDF en...\" para elegir dónde guardarlo.",
+                    "1. Seleccione el tipo de reporte en el panel izquierdo.\n" +
+                    "2. Configure el rango de fechas si aplica (solo Ventas por Periodo).\n" +
+                    "3. Haga clic en \"Generar y Abrir PDF\" para visualizar el reporte.\n" +
+                    "4. Use \"Guardar PDF en...\" para elegir dónde guardar el archivo.\n\n" +
+                    "Nota: Los reportes de ventas y compras requieren datos en las\n" +
+                    "tablas VENTA, CLIENTE, PROVEEDOR y COMPRA de la base de datos.",
                 AutoSize  = false,
                 Dock      = DockStyle.Fill,
                 Font      = new Font("Segoe UI", 9.5f),
@@ -287,8 +312,6 @@ namespace GaleriaDeArtes.PantallasJona
                 BackColor = Color.FromArgb(197, 220, 240)
             };
 
-            // Orden: primero panelDer (Fill), luego separador (Left), luego panelIzq (Left),
-            // luego MenuLateral (Left). El último en agregarse queda más a la izquierda.
             Controls.Add(panelDer);
             Controls.Add(separador);
             Controls.Add(panelIzq);
@@ -304,7 +327,8 @@ namespace GaleriaDeArtes.PantallasJona
         private void CboTipoReporte_SelectedIndexChanged(object? sender, EventArgs e)
         {
             int idx = cboTipoReporte.SelectedIndex;
-            grpFiltros.Visible = (idx == 0);
+            grpFiltros.Visible    = (idx == 0);   // Ventas por Periodo
+            grpFiltroMes.Visible  = (idx == 5);   // Ventas por Mes
 
             if (idx >= 0 && idx < Descripciones.Length)
                 lblDescripcion.Text = Descripciones[idx];
@@ -360,15 +384,17 @@ namespace GaleriaDeArtes.PantallasJona
 
         // ─────────────────────────────────────────────────────────────────────
         // GENERACIÓN ASÍNCRONA
-        // Los controles se leen en el hilo UI ANTES de Task.Run para evitar
-        // acceso cross-thread (InvalidOperationException).
+        // Los valores de los controles se capturan en el hilo UI ANTES de
+        // Task.Run para evitar acceso cross-thread.
         // ─────────────────────────────────────────────────────────────────────
 
         private async Task EjecutarGeneracion(string rutaDestino)
         {
-            // Capturar valores en hilo UI antes de entrar al Task
-            int            tipoReporte = cboTipoReporte.SelectedIndex;
-            FiltroPintura? filtro      = (tipoReporte == 0) ? ConstruirFiltro() : null;
+            int          tipoReporte = cboTipoReporte.SelectedIndex;
+            FiltroFechas filtro      = ConstruirFiltro();
+            FiltroMes?   filtroMes   = ConstruirFiltroMes();
+
+            if (filtroMes == null) return;  // validación ya mostró el mensaje
 
             btnGenerar.Enabled  = false;
             btnGuardar.Enabled  = false;
@@ -381,28 +407,28 @@ namespace GaleriaDeArtes.PantallasJona
                     switch (tipoReporte)
                     {
                         case 0:
-                            GeneradorPDF.GenerarCatalogoPinturas(
-                                _bll.ObtenerCatalogoPinturas(filtro), filtro, rutaDestino);
+                            GeneradorPDF.GenerarVentasPorPeriodo(
+                                _bll.ObtenerVentasPorPeriodo(filtro), filtro, rutaDestino);
                             break;
                         case 1:
-                            GeneradorPDF.GenerarResumenArtistas(
-                                _bll.ObtenerResumenPorArtista(), rutaDestino);
+                            GeneradorPDF.GenerarTopPinturas(
+                                _bll.ObtenerTopPinturas(), rutaDestino);
                             break;
                         case 2:
-                            GeneradorPDF.GenerarResumenTecnicas(
-                                _bll.ObtenerResumenPorTecnica(), rutaDestino);
+                            GeneradorPDF.GenerarInventarioActual(
+                                _bll.ObtenerInventarioActual(), rutaDestino);
                             break;
                         case 3:
-                            GeneradorPDF.GenerarInventarioPorEstado(
-                                _bll.ObtenerInventarioPorEstado(), rutaDestino);
+                            GeneradorPDF.GenerarComprasPorProveedor(
+                                _bll.ObtenerComprasPorProveedor(), rutaDestino);
                             break;
                         case 4:
-                            GeneradorPDF.GenerarResumenEjecutivo(
-                                _bll.ObtenerResumenEjecutivo(), rutaDestino);
+                            GeneradorPDF.GenerarVentasPorCliente(
+                                _bll.ObtenerVentasPorCliente(), rutaDestino);
                             break;
                         case 5:
-                            GeneradorPDF.GenerarReportePorExhibicion(
-                                _bll.ObtenerPinturasPorExhibicion(), rutaDestino);
+                            GeneradorPDF.GenerarVentasPorMes(
+                                _bll.ObtenerVentasPorMes(filtroMes!), filtroMes!, rutaDestino);
                             break;
                     }
                 });
@@ -417,7 +443,6 @@ namespace GaleriaDeArtes.PantallasJona
             }
             finally
             {
-                // Siempre en hilo UI (continuación del await)
                 btnGenerar.Enabled  = true;
                 progressBar.Visible = false;
             }
@@ -427,58 +452,35 @@ namespace GaleriaDeArtes.PantallasJona
         // HELPERS
         // ─────────────────────────────────────────────────────────────────────
 
-        private FiltroPintura ConstruirFiltro()
+        private FiltroFechas ConstruirFiltro()
         {
-            var filtro = new FiltroPintura();
+            if (cboTipoReporte.SelectedIndex != 0)
+                return new FiltroFechas();
 
-            if (cboFiltroArtista.SelectedItem is Artista artSelec && artSelec.IdArtista > 0)
-                filtro.IdArtista = artSelec.IdArtista;
-
-            string estado = cboFiltroEstado.SelectedItem?.ToString() ?? "(Todos)";
-            if (estado != "(Todos)")
-                filtro.EstadoDisponibilidad = estado;
-
-            int anioDesde = (int)nudAnioDesde.Value;
-            int anioHasta = (int)nudAnioHasta.Value;
-            if (anioDesde > 1400) filtro.AnioDesde = anioDesde;
-            if (anioHasta < DateTime.Now.Year) filtro.AnioHasta = anioHasta;
-
-            if (decimal.TryParse(txtPrecioMin.Text, out decimal precioMin) && precioMin > 0)
-                filtro.PrecioMinimo = precioMin;
-            if (decimal.TryParse(txtPrecioMax.Text, out decimal precioMax) && precioMax > 0)
-                filtro.PrecioMaximo = precioMax;
-
-            return filtro;
+            return new FiltroFechas
+            {
+                FechaDesde = dtpFechaDesde.Value.Date,
+                FechaHasta = dtpFechaHasta.Value.Date
+            };
         }
 
-        private void CargarArtistasEnFiltro()
+        private FiltroMes? ConstruirFiltroMes()
         {
-            try
-            {
-                var dal   = new PinturaDAL();
-                var lista = dal.ObtenerArtistas();
-                lista.Insert(0, new Artista { IdArtista = 0, NombreCompleto = "(Todos los artistas)" });
+            if (cboTipoReporte.SelectedIndex != 5)
+                return new FiltroMes { Mes = 1, Anio = DateTime.Now.Year };
 
-                cboFiltroArtista.DataSource    = lista;
-                cboFiltroArtista.DisplayMember = "NombreCompleto";
-                cboFiltroArtista.ValueMember   = "IdArtista";
-                cboFiltroArtista.SelectedIndex = 0;
-            }
-            catch
+            if (cboMes.SelectedIndex < 0 || cboAnio.SelectedIndex < 0)
             {
-                cboFiltroArtista.Items.Add("(Todos los artistas)");
-                cboFiltroArtista.SelectedIndex = 0;
+                MessageBox.Show("Seleccione mes y año para generar el reporte.",
+                    "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return null;
             }
-        }
 
-        private void LimpiarFiltros()
-        {
-            cboFiltroArtista.SelectedIndex = 0;
-            cboFiltroEstado.SelectedIndex  = 0;
-            nudAnioDesde.Value             = 1900;
-            nudAnioHasta.Value             = DateTime.Now.Year;
-            txtPrecioMin.Clear();
-            txtPrecioMax.Clear();
+            return new FiltroMes
+            {
+                Mes  = cboMes.SelectedIndex + 1,
+                Anio = (int)cboAnio.SelectedItem!
+            };
         }
 
         private static Label Etiqueta(string texto, int x, int y) => new Label

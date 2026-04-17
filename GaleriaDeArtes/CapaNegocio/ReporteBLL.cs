@@ -6,28 +6,17 @@ namespace GaleriaDeArtes.CapaNegocio
     /// <summary>
     /// Capa de negocio del módulo de reportes.
     /// Centraliza las llamadas al DAL y puede agregar validaciones
-    /// o transformaciones adicionales sin tocar la UI ni los datos.
+    /// o transformaciones sin tocar la UI ni la capa de datos.
     /// </summary>
     public class ReporteBLL
     {
-        private readonly ReporteDAL _dal = new ReporteDAL();
+        private readonly ReporteDAL _dal = new();
 
-        public List<FilaCatalogoPintura>  ObtenerCatalogoPinturas(FiltroPintura? filtro = null)
-            => _dal.ObtenerCatalogoPinturas(filtro);
-
-        public List<FilaResumenArtista>   ObtenerResumenPorArtista()
-            => _dal.ObtenerResumenPorArtista();
-
-        public List<FilaResumenTecnica>   ObtenerResumenPorTecnica()
-            => _dal.ObtenerResumenPorTecnica();
-
-        public List<FilaInventarioEstado> ObtenerInventarioPorEstado()
-            => _dal.ObtenerInventarioPorEstado();
-
-        public ResumenEjecutivo           ObtenerResumenEjecutivo()
-            => _dal.ObtenerResumenEjecutivo();
-
-        public List<FilaExhibicion>       ObtenerPinturasPorExhibicion()
-            => _dal.ObtenerPinturasPorExhibicion();
+        public List<FilaVentaPeriodo>       ObtenerVentasPorPeriodo(FiltroFechas? filtro = null) => _dal.ObtenerVentasPorPeriodo(filtro);
+        public List<FilaTopPintura>         ObtenerTopPinturas()                                  => _dal.ObtenerTopPinturas();
+        public List<FilaInventario>         ObtenerInventarioActual()                             => _dal.ObtenerInventarioActual();
+        public List<FilaCompraPorProveedor> ObtenerComprasPorProveedor()                         => _dal.ObtenerComprasPorProveedor();
+        public List<FilaVentaPorCliente>    ObtenerVentasPorCliente()                            => _dal.ObtenerVentasPorCliente();
+        public List<FilaVentaPorMes>        ObtenerVentasPorMes(FiltroMes filtro)                 => _dal.ObtenerVentasPorMes(filtro);
     }
 }

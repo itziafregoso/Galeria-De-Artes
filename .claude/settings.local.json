@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(sqlcmd -S BICHITO -d GaleriaArte -U sa -P Fregoso03 -Q \"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME\")",
+      "Bash(sqlcmd *)"
+    ]
+  }
+}

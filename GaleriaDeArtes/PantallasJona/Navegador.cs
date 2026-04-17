@@ -30,10 +30,11 @@ namespace GaleriaDeArtes.PantallasJona
         {
             Form nuevo = destino switch
             {
-                PaginaActiva.Artistas  => new global::GaleriaDeArtes.Artistas(),
-                PaginaActiva.Pinturas  => new global::GaleriaDeArtes.Pinturas(),
-                PaginaActiva.Reportes  => new Reportes(),
-                PaginaActiva.Proveedor => null!, // aún no implementado
+                PaginaActiva.Artistas      => new global::GaleriaDeArtes.Artistas(),
+                PaginaActiva.Pinturas      => new global::GaleriaDeArtes.Pinturas(),
+                PaginaActiva.Reportes      => new Reportes(),
+                PaginaActiva.Exhibiciones  => new Exhibiciones(),
+                PaginaActiva.Proveedor     => null!, // aún no implementado
                 _ => null!
             };
 

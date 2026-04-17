@@ -6,167 +6,292 @@ using QuestPDF.Infrastructure;
 namespace GaleriaDeArtes.ModuloReportes
 {
     /// <summary>
-    /// Genera todos los reportes en formato PDF usando QuestPDF.
-    /// Cada método público retorna la ruta del archivo generado.
-    /// Paleta de colores: tonos vinotinto/marrón para tema galería de arte.
+    /// Genera los reportes en PDF usando QuestPDF.
+    /// Paleta: Navy #154D71 / Blue #1C6EA4 / Sea #33A1E0.
     /// </summary>
     public static class GeneradorPDF
     {
-        // ── Paleta de colores del sistema (#154D71 Navy / #1C6EA4 Blue / #33A1E0 Sea / #FFF9AF Yellow)
-        private static readonly string ColorPrimario    = "#154D71";   // Navy oscuro
-        private static readonly string ColorSecundario  = "#1C6EA4";   // Blue medio
-        private static readonly string ColorAcento      = "#33A1E0";   // Sea / celeste
-        private static readonly string ColorFondoClaro  = "#EEF6FF";   // Azul muy claro
-        private static readonly string ColorFondaTabla  = "#E0F0FF";   // Azul tabla alternado
+        // ── Paleta ────────────────────────────────────────────────────────────
+        private static readonly string ColorPrimario    = "#154D71";
+        private static readonly string ColorSecundario  = "#1C6EA4";
+        private static readonly string ColorAcento      = "#33A1E0";
+        private static readonly string ColorFondoClaro  = "#EEF6FF";
+        private static readonly string ColorFondaTabla  = "#E0F0FF";
         private static readonly string ColorTextoBlanco = "#FFFFFF";
         private static readonly string ColorTextoGris   = "#6B6B6B";
-        private static readonly string ColorBorde       = "#C5DCF0";   // Borde azul suave
+        private static readonly string ColorBorde       = "#C5DCF0";
 
         // ─────────────────────────────────────────────────────────────────────
-        // 1. CATÁLOGO GENERAL DE PINTURAS
+        // 1. VENTAS POR PERIODO
         // ─────────────────────────────────────────────────────────────────────
 
-        /// <param name="datos">Filas del catálogo.</param>
-        /// <param name="filtro">Filtro aplicado (puede ser null).</param>
-        /// <param name="rutaDestino">Ruta completa del archivo PDF a generar.</param>
-        public static void GenerarCatalogoPinturas(
-            List<FilaCatalogoPintura> datos,
-            FiltroPintura?            filtro,
-            string                    rutaDestino)
+        public static void GenerarVentasPorPeriodo(
+            List<FilaVentaPeriodo> datos,
+            FiltroFechas?          filtro,
+            string                 rutaDestino)
         {
-            Document.Create(contenedor =>
+            string subtitulo = filtro?.TieneFiltros == true
+                ? $"{filtro.FechaDesde:dd/MM/yyyy} — {filtro.FechaHasta:dd/MM/yyyy}"
+                : "Todas las fechas";
+
+            Document.Create(c =>
             {
-                contenedor.Page(pagina =>
+                c.Page(p =>
                 {
-                    pagina.Size(PageSizes.A4.Landscape());
-                    pagina.Margin(1.5f, Unit.Centimetre);
-                    pagina.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
+                    p.Size(PageSizes.A4.Landscape());
+                    p.Margin(1.5f, Unit.Centimetre);
+                    p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
 
-                    pagina.Header().Element(c => EncabezadoPagina(c,
-                        "Catálogo General de Pinturas",
-                        filtro?.TieneFiltros == true ? "Con filtros aplicados" : "Sin filtros"));
+                    p.Header().Element(h => EncabezadoPagina(h, "Ventas por Periodo", subtitulo));
 
-                    pagina.Content().PaddingTop(10).Column(col =>
+                    p.Content().PaddingTop(10).Column(col =>
                     {
-                        // Estadísticas rápidas
                         col.Item().Row(row =>
                         {
-                            TarjetaStat(row.RelativeItem(), "Total obras",
+                            TarjetaStat(row.RelativeItem(), "Total ventas",
                                 datos.Count.ToString(), ColorPrimario);
-                            TarjetaStat(row.RelativeItem(), "Valor total",
-                                datos.Sum(d => d.PrecioBase).ToString("C"), ColorSecundario);
-                            TarjetaStat(row.RelativeItem(), "Precio promedio",
-                                (datos.Any() ? datos.Average(d => d.PrecioBase) : 0).ToString("C"),
+                            TarjetaStat(row.RelativeItem(), "Ingresos totales",
+                                datos.Sum(d => d.PrecioVenta).ToString("C"), ColorSecundario);
+                            TarjetaStat(row.RelativeItem(), "Promedio por venta",
+                                (datos.Any() ? datos.Average(d => d.PrecioVenta) : 0).ToString("C"),
                                 "#1A6E8E");
-                            TarjetaStat(row.RelativeItem(), "Disponibles",
-                                datos.Count(d => d.Estado.Equals("Disponible",
-                                    StringComparison.OrdinalIgnoreCase)).ToString(),
-                                "#2E7D5C");
                         });
 
-                        col.Item().PaddingTop(8).Table(tabla =>
+                        col.Item().PaddingTop(8).Table(t =>
                         {
-                            // Definición de columnas
-                            tabla.ColumnsDefinition(cols =>
+                            t.ColumnsDefinition(cols =>
                             {
-                                cols.RelativeColumn(3.0f); // Título
+                                cols.RelativeColumn(3f);   // Pintura
+                                cols.RelativeColumn(2.5f); // Cliente
+                                cols.ConstantColumn(100);  // Fecha
+                                cols.ConstantColumn(100);  // Precio
+                            });
+
+                            t.Header(h =>
+                            {
+                                CeldaEncabezado(h.Cell(), "Pintura");
+                                CeldaEncabezado(h.Cell(), "Cliente");
+                                CeldaEncabezado(h.Cell(), "Fecha de Venta");
+                                CeldaEncabezado(h.Cell(), "Precio de Venta");
+                            });
+
+                            bool par = false;
+                            foreach (var fila in datos)
+                            {
+                                string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
+                                par = !par;
+                                CeldaDato(t.Cell(), fila.Titulo,                      fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.Cliente,                     fondo);
+                                CeldaDato(t.Cell(), fila.FechaVenta.ToString("dd/MM/yyyy"), fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.PrecioVenta.ToString("C"),   fondo, centrado: true);
+                            }
+                        });
+                    });
+
+                    p.Footer().Element(PiePagina);
+                });
+            }).GeneratePdf(rutaDestino);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 2. TOP 10 PINTURAS MÁS VENDIDAS
+        // ─────────────────────────────────────────────────────────────────────
+
+        public static void GenerarTopPinturas(
+            List<FilaTopPintura> datos,
+            string               rutaDestino)
+        {
+            Document.Create(c =>
+            {
+                c.Page(p =>
+                {
+                    p.Size(PageSizes.A4);
+                    p.Margin(1.5f, Unit.Centimetre);
+                    p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
+
+                    p.Header().Element(h => EncabezadoPagina(h,
+                        "Top 10 Pinturas Más Vendidas",
+                        $"Ordenadas por cantidad de ventas descendente"));
+
+                    p.Content().PaddingTop(10).Column(col =>
+                    {
+                        col.Item().Row(row =>
+                        {
+                            TarjetaStat(row.RelativeItem(), "Pinturas en ranking",
+                                datos.Count.ToString(), ColorPrimario);
+                            TarjetaStat(row.RelativeItem(), "Ventas acumuladas",
+                                datos.Sum(d => d.VecesVendida).ToString(), ColorSecundario);
+                            TarjetaStat(row.RelativeItem(), "Ingresos totales",
+                                datos.Sum(d => d.IngresoTotal).ToString("C"), "#1A6E8E");
+                        });
+
+                        col.Item().PaddingTop(8).Table(t =>
+                        {
+                            t.ColumnsDefinition(cols =>
+                            {
+                                cols.ConstantColumn(35);   // #
+                                cols.RelativeColumn(3f);   // Pintura
+                                cols.RelativeColumn(2.5f); // Artista
+                                cols.ConstantColumn(80);   // Veces vendida
+                                cols.ConstantColumn(100);  // Ingreso total
+                            });
+
+                            t.Header(h =>
+                            {
+                                CeldaEncabezado(h.Cell(), "#");
+                                CeldaEncabezado(h.Cell(), "Pintura");
+                                CeldaEncabezado(h.Cell(), "Artista");
+                                CeldaEncabezado(h.Cell(), "Veces Vendida");
+                                CeldaEncabezado(h.Cell(), "Ingreso Total");
+                            });
+
+                            bool par = false;
+                            foreach (var fila in datos)
+                            {
+                                string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
+                                par = !par;
+                                CeldaDato(t.Cell(), fila.Posicion.ToString(),          fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.Titulo,                       fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.Artista,                      fondo);
+                                CeldaDato(t.Cell(), fila.VecesVendida.ToString(),      fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.IngresoTotal.ToString("C"),   fondo, centrado: true);
+                            }
+                        });
+                    });
+
+                    p.Footer().Element(PiePagina);
+                });
+            }).GeneratePdf(rutaDestino);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 3. INVENTARIO ACTUAL
+        // ─────────────────────────────────────────────────────────────────────
+
+        public static void GenerarInventarioActual(
+            List<FilaInventario> datos,
+            string               rutaDestino)
+        {
+            int disponibles = datos.Count(d => d.Estado.Equals("Disponible", StringComparison.OrdinalIgnoreCase));
+            int vendidas    = datos.Count(d => d.Estado.Equals("Vendida",    StringComparison.OrdinalIgnoreCase));
+            int reservadas  = datos.Count(d => d.Estado.Equals("Reservada",  StringComparison.OrdinalIgnoreCase));
+
+            Document.Create(c =>
+            {
+                c.Page(p =>
+                {
+                    p.Size(PageSizes.A4.Landscape());
+                    p.Margin(1.5f, Unit.Centimetre);
+                    p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
+
+                    p.Header().Element(h => EncabezadoPagina(h,
+                        "Inventario Actual",
+                        $"Total: {datos.Count} pinturas · Valor: {datos.Sum(d => d.PrecioBase):C}"));
+
+                    p.Content().PaddingTop(10).Column(col =>
+                    {
+                        col.Item().Row(row =>
+                        {
+                            TarjetaStat(row.RelativeItem(), "Total pinturas",
+                                datos.Count.ToString(), ColorPrimario);
+                            TarjetaStat(row.RelativeItem(), "Disponibles",
+                                disponibles.ToString(), "#2E7D5C");
+                            TarjetaStat(row.RelativeItem(), "Vendidas",
+                                vendidas.ToString(), "#C0392B");
+                            TarjetaStat(row.RelativeItem(), "Reservadas",
+                                reservadas.ToString(), "#2980B9");
+                        });
+
+                        col.Item().PaddingTop(8).Table(t =>
+                        {
+                            t.ColumnsDefinition(cols =>
+                            {
+                                cols.RelativeColumn(3f);   // Título
                                 cols.RelativeColumn(2.5f); // Artista
                                 cols.RelativeColumn(1.8f); // Técnica
-                                cols.ConstantColumn(45);   // Año
                                 cols.RelativeColumn(1.5f); // Dimensiones
-                                cols.ConstantColumn(80);   // Precio
-                                cols.ConstantColumn(72);   // Estado
-                                cols.RelativeColumn(2.5f); // Exhibiciones
+                                cols.ConstantColumn(90);   // Precio
+                                cols.ConstantColumn(80);   // Estado
                             });
 
-                            // Encabezado de tabla
-                            tabla.Header(header =>
+                            t.Header(h =>
                             {
-                                CeldaEncabezado(header.Cell(), "Título");
-                                CeldaEncabezado(header.Cell(), "Artista");
-                                CeldaEncabezado(header.Cell(), "Técnica");
-                                CeldaEncabezado(header.Cell(), "Año");
-                                CeldaEncabezado(header.Cell(), "Dimensiones");
-                                CeldaEncabezado(header.Cell(), "Precio");
-                                CeldaEncabezado(header.Cell(), "Estado");
-                                CeldaEncabezado(header.Cell(), "Exhibición(es)");
+                                CeldaEncabezado(h.Cell(), "Título");
+                                CeldaEncabezado(h.Cell(), "Artista");
+                                CeldaEncabezado(h.Cell(), "Técnica");
+                                CeldaEncabezado(h.Cell(), "Dimensiones");
+                                CeldaEncabezado(h.Cell(), "Precio Base");
+                                CeldaEncabezado(h.Cell(), "Estado");
                             });
 
-                            // Filas
                             bool par = false;
                             foreach (var fila in datos)
                             {
                                 string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
                                 par = !par;
-
-                                CeldaDato(tabla.Cell(), fila.Titulo,          fondo, bold: true);
-                                CeldaDato(tabla.Cell(), fila.Artista,         fondo);
-                                CeldaDato(tabla.Cell(), fila.Tecnica,         fondo);
-                                CeldaDato(tabla.Cell(), fila.AnioCreacion?.ToString() ?? "—", fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), fila.Dimensiones,     fondo);
-                                CeldaDato(tabla.Cell(), fila.PrecioBase.ToString("C"), fondo, centrado: true);
-                                CeldaEstado(tabla.Cell(),fila.Estado);
-                                CeldaDato(tabla.Cell(), fila.Exhibiciones,    fondo, color: ColorTextoGris);
+                                CeldaDato(t.Cell(), fila.Titulo,                  fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.Artista,                 fondo);
+                                CeldaDato(t.Cell(), fila.Tecnica,                 fondo);
+                                CeldaDato(t.Cell(), fila.Dimensiones,             fondo);
+                                CeldaDato(t.Cell(), fila.PrecioBase.ToString("C"), fondo, centrado: true);
+                                CeldaEstado(t.Cell(), fila.Estado);
                             }
                         });
                     });
 
-                    pagina.Footer().Element(PiePagina);
+                    p.Footer().Element(PiePagina);
                 });
             }).GeneratePdf(rutaDestino);
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // 2. RESUMEN POR ARTISTA
+        // 4. COMPRAS POR PROVEEDOR
         // ─────────────────────────────────────────────────────────────────────
 
-        public static void GenerarResumenArtistas(
-            List<FilaResumenArtista> datos,
-            string                   rutaDestino)
+        public static void GenerarComprasPorProveedor(
+            List<FilaCompraPorProveedor> datos,
+            string                       rutaDestino)
         {
-            Document.Create(contenedor =>
+            Document.Create(c =>
             {
-                contenedor.Page(pagina =>
+                c.Page(p =>
                 {
-                    pagina.Size(PageSizes.A4);
-                    pagina.Margin(1.5f, Unit.Centimetre);
-                    pagina.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
+                    p.Size(PageSizes.A4);
+                    p.Margin(1.5f, Unit.Centimetre);
+                    p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
 
-                    pagina.Header().Element(c => EncabezadoPagina(c,
-                        "Producción por Artista",
-                        $"{datos.Count} artistas registrados"));
+                    p.Header().Element(h => EncabezadoPagina(h,
+                        "Compras por Proveedor",
+                        $"{datos.Count} proveedores · Total comprado: {datos.Sum(d => d.MontoTotal):C}"));
 
-                    pagina.Content().PaddingTop(10).Column(col =>
+                    p.Content().PaddingTop(10).Column(col =>
                     {
                         col.Item().Row(row =>
                         {
-                            TarjetaStat(row.RelativeItem(), "Artistas", datos.Count.ToString(), ColorPrimario);
-                            TarjetaStat(row.RelativeItem(), "Obras totales",
-                                datos.Sum(d => d.TotalPinturas).ToString(), ColorSecundario);
-                            TarjetaStat(row.RelativeItem(), "Valor total",
-                                datos.Sum(d => d.ValorTotal).ToString("C"), "#1A6E8E");
+                            TarjetaStat(row.RelativeItem(), "Proveedores",
+                                datos.Count.ToString(), ColorPrimario);
+                            TarjetaStat(row.RelativeItem(), "Total compras",
+                                datos.Sum(d => d.TotalCompras).ToString(), ColorSecundario);
+                            TarjetaStat(row.RelativeItem(), "Monto total",
+                                datos.Sum(d => d.MontoTotal).ToString("C"), "#1A6E8E");
                         });
 
-                        col.Item().PaddingTop(8).Table(tabla =>
+                        col.Item().PaddingTop(8).Table(t =>
                         {
-                            tabla.ColumnsDefinition(cols =>
+                            t.ColumnsDefinition(cols =>
                             {
-                                cols.RelativeColumn(3f);   // Artista
-                                cols.RelativeColumn(2f);   // Nacionalidad
-                                cols.RelativeColumn(2f);   // Estilo
-                                cols.ConstantColumn(65);   // Obras
-                                cols.ConstantColumn(95);   // Valor total
-                                cols.ConstantColumn(95);   // Precio promedio
+                                cols.RelativeColumn(3f);   // Proveedor
+                                cols.ConstantColumn(90);   // # Compras
+                                cols.ConstantColumn(110);  // Monto total
+                                cols.ConstantColumn(100);  // Última compra
                             });
 
-                            tabla.Header(h =>
+                            t.Header(h =>
                             {
-                                CeldaEncabezado(h.Cell(), "Artista");
-                                CeldaEncabezado(h.Cell(), "Nacionalidad");
-                                CeldaEncabezado(h.Cell(), "Estilo Predominante");
-                                CeldaEncabezado(h.Cell(), "Obras");
-                                CeldaEncabezado(h.Cell(), "Valor Total");
-                                CeldaEncabezado(h.Cell(), "Precio Promedio");
+                                CeldaEncabezado(h.Cell(), "Proveedor");
+                                CeldaEncabezado(h.Cell(), "Núm. Compras");
+                                CeldaEncabezado(h.Cell(), "Monto Total");
+                                CeldaEncabezado(h.Cell(), "Última Compra");
                             });
 
                             bool par = false;
@@ -174,318 +299,202 @@ namespace GaleriaDeArtes.ModuloReportes
                             {
                                 string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
                                 par = !par;
-                                CeldaDato(tabla.Cell(), fila.NombreArtista,                    fondo, bold: true);
-                                CeldaDato(tabla.Cell(), fila.Nacionalidad,                     fondo);
-                                CeldaDato(tabla.Cell(), fila.EstiloPredominante,               fondo);
-                                CeldaDato(tabla.Cell(), fila.TotalPinturas.ToString(),         fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), fila.ValorTotal.ToString("C"),         fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), fila.PrecioPromedio.ToString("C"),     fondo, centrado: true);
-                            }
-                        });
-                    });
-
-                    pagina.Footer().Element(PiePagina);
-                });
-            }).GeneratePdf(rutaDestino);
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        // 3. ANÁLISIS POR TÉCNICA
-        // ─────────────────────────────────────────────────────────────────────
-
-        public static void GenerarResumenTecnicas(
-            List<FilaResumenTecnica> datos,
-            string                   rutaDestino)
-        {
-            int totalObras = datos.Sum(d => d.TotalPinturas);
-
-            Document.Create(contenedor =>
-            {
-                contenedor.Page(pagina =>
-                {
-                    pagina.Size(PageSizes.A4);
-                    pagina.Margin(1.5f, Unit.Centimetre);
-                    pagina.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
-
-                    pagina.Header().Element(c => EncabezadoPagina(c,
-                        "Análisis por Técnica Pictórica",
-                        $"{datos.Count} técnicas · {totalObras} obras en total"));
-
-                    pagina.Content().PaddingTop(10).Column(col =>
-                    {
-                        col.Item().Table(tabla =>
-                        {
-                            tabla.ColumnsDefinition(cols =>
-                            {
-                                cols.RelativeColumn(3f);
-                                cols.ConstantColumn(70);
-                                cols.ConstantColumn(70);  // porcentaje
-                                cols.ConstantColumn(110);
-                                cols.ConstantColumn(110);
-                            });
-
-                            tabla.Header(h =>
-                            {
-                                CeldaEncabezado(h.Cell(), "Técnica");
-                                CeldaEncabezado(h.Cell(), "Obras");
-                                CeldaEncabezado(h.Cell(), "% del total");
-                                CeldaEncabezado(h.Cell(), "Valor Total");
-                                CeldaEncabezado(h.Cell(), "Precio Promedio");
-                            });
-
-                            bool par = false;
-                            foreach (var fila in datos)
-                            {
-                                string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
-                                par = !par;
-                                double pct = totalObras > 0
-                                    ? fila.TotalPinturas * 100.0 / totalObras
-                                    : 0;
-                                CeldaDato(tabla.Cell(), fila.NombreTecnica,            fondo, bold: true);
-                                CeldaDato(tabla.Cell(), fila.TotalPinturas.ToString(), fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), $"{pct:F1}%",                  fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), fila.ValorTotal.ToString("C"), fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), fila.PrecioPromedio.ToString("C"), fondo, centrado: true);
-                            }
-                        });
-                    });
-
-                    pagina.Footer().Element(PiePagina);
-                });
-            }).GeneratePdf(rutaDestino);
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        // 4. INVENTARIO POR ESTADO
-        // ─────────────────────────────────────────────────────────────────────
-
-        public static void GenerarInventarioPorEstado(
-            List<FilaInventarioEstado> datos,
-            string                     rutaDestino)
-        {
-            Document.Create(contenedor =>
-            {
-                contenedor.Page(pagina =>
-                {
-                    pagina.Size(PageSizes.A4);
-                    pagina.Margin(1.5f, Unit.Centimetre);
-                    pagina.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
-
-                    pagina.Header().Element(c => EncabezadoPagina(c,
-                        "Inventario por Estado de Disponibilidad",
-                        $"Valor total del inventario: {datos.Sum(d => d.ValorTotal):C}"));
-
-                    pagina.Content().PaddingTop(10).Column(col =>
-                    {
-                        col.Item().Table(tabla =>
-                        {
-                            tabla.ColumnsDefinition(cols =>
-                            {
-                                cols.RelativeColumn(2.5f);
-                                cols.ConstantColumn(75);
-                                cols.ConstantColumn(85);
-                                cols.ConstantColumn(110);
-                                cols.ConstantColumn(110);
-                            });
-
-                            tabla.Header(h =>
-                            {
-                                CeldaEncabezado(h.Cell(), "Estado");
-                                CeldaEncabezado(h.Cell(), "Cantidad");
-                                CeldaEncabezado(h.Cell(), "% Participación");
-                                CeldaEncabezado(h.Cell(), "Valor Total");
-                                CeldaEncabezado(h.Cell(), "Precio Promedio");
-                            });
-
-                            bool par = false;
-                            foreach (var fila in datos)
-                            {
-                                string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
-                                par = !par;
-                                CeldaDato(tabla.Cell(), fila.Estado,                     fondo, bold: true);
-                                CeldaDato(tabla.Cell(), fila.Cantidad.ToString(),         fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), $"{fila.Porcentaje:F1}%",         fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), fila.ValorTotal.ToString("C"),    fondo, centrado: true);
-                                CeldaDato(tabla.Cell(), fila.PrecioPromedio.ToString("C"),fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.Proveedor,                                   fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.TotalCompras.ToString(),                      fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.MontoTotal.ToString("C"),                     fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.UltimaCompra?.ToString("dd/MM/yyyy") ?? "—",  fondo, centrado: true);
                             }
 
                             // Fila de totales
-                            tabla.Cell().ColumnSpan(2)
-                                .Background(ColorPrimario).Padding(4)
+                            t.Cell().ColumnSpan(2).Background(ColorPrimario).Padding(4)
                                 .Text("TOTALES").FontColor(ColorTextoBlanco).Bold().FontSize(9);
-                            tabla.Cell().Background(ColorPrimario).Padding(4)
-                                .Text($"{datos.Sum(d => d.Porcentaje):F1}%")
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text(datos.Sum(d => d.MontoTotal).ToString("C"))
                                 .FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
-                            tabla.Cell().Background(ColorPrimario).Padding(4)
-                                .Text(datos.Sum(d => d.ValorTotal).ToString("C"))
-                                .FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
-                            tabla.Cell().Background(ColorPrimario).Padding(4)
+                            t.Cell().Background(ColorPrimario).Padding(4)
                                 .Text("—").FontColor(ColorTextoBlanco).FontSize(9).AlignCenter();
                         });
                     });
 
-                    pagina.Footer().Element(PiePagina);
+                    p.Footer().Element(PiePagina);
                 });
             }).GeneratePdf(rutaDestino);
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // 5. RESUMEN EJECUTIVO
+        // 5. VENTAS POR CLIENTE
         // ─────────────────────────────────────────────────────────────────────
 
-        public static void GenerarResumenEjecutivo(
-            ResumenEjecutivo resumen,
-            string           rutaDestino)
+        public static void GenerarVentasPorCliente(
+            List<FilaVentaPorCliente> datos,
+            string                    rutaDestino)
         {
-            Document.Create(contenedor =>
+            Document.Create(c =>
             {
-                contenedor.Page(pagina =>
+                c.Page(p =>
                 {
-                    pagina.Size(PageSizes.A4);
-                    pagina.Margin(2f, Unit.Centimetre);
-                    pagina.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(10));
+                    p.Size(PageSizes.A4);
+                    p.Margin(1.5f, Unit.Centimetre);
+                    p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
 
-                    pagina.Header().Element(c => EncabezadoPagina(c,
-                        "Resumen Ejecutivo de la Galería",
-                        $"Generado el {DateTime.Now:dd/MM/yyyy HH:mm}"));
+                    p.Header().Element(h => EncabezadoPagina(h,
+                        "Ventas por Cliente",
+                        $"{datos.Count} clientes · Total: {datos.Sum(d => d.MontoTotal):C}"));
 
-                    pagina.Content().PaddingTop(15).Column(col =>
+                    p.Content().PaddingTop(10).Column(col =>
                     {
-                        // ── Bloque 1: KPIs principales ─────────────────────
-                        col.Item().Text("Indicadores Clave").FontSize(12).Bold()
-                            .FontColor(ColorPrimario);
-                        col.Item().PaddingTop(6).Row(row =>
+                        col.Item().Row(row =>
                         {
-                            TarjetaStat(row.RelativeItem(), "Artistas registrados",
-                                resumen.TotalArtistas.ToString(), ColorPrimario);
-                            TarjetaStat(row.RelativeItem(), "Pinturas en catálogo",
-                                resumen.TotalPinturas.ToString(), ColorSecundario);
-                            TarjetaStat(row.RelativeItem(), "Exhibiciones activas",
-                                resumen.TotalExhibiciones.ToString(), "#1A6E8E");
+                            TarjetaStat(row.RelativeItem(), "Clientes",
+                                datos.Count.ToString(), ColorPrimario);
+                            TarjetaStat(row.RelativeItem(), "Ventas totales",
+                                datos.Sum(d => d.TotalVentas).ToString(), ColorSecundario);
+                            TarjetaStat(row.RelativeItem(), "Monto total",
+                                datos.Sum(d => d.MontoTotal).ToString("C"), "#1A6E8E");
                         });
 
-                        col.Item().PaddingTop(8).Row(row =>
+                        col.Item().PaddingTop(8).Table(t =>
                         {
-                            TarjetaStat(row.RelativeItem(), "Valor total inventario",
-                                resumen.ValorTotalInventario.ToString("C"), ColorPrimario);
-                            TarjetaStat(row.RelativeItem(), "Precio promedio por obra",
-                                resumen.PrecioPromedio.ToString("C"), ColorSecundario);
-                        });
-
-                        // ── Bloque 2: Disponibilidad ───────────────────────
-                        col.Item().PaddingTop(16)
-                            .Text("Estado del Inventario").FontSize(12).Bold()
-                            .FontColor(ColorPrimario);
-                        col.Item().PaddingTop(6).Row(row =>
-                        {
-                            TarjetaStat(row.RelativeItem(), "Disponibles",
-                                resumen.PinturasDisponibles.ToString(), "#2E7D5C");
-                            TarjetaStat(row.RelativeItem(), "Vendidas",
-                                resumen.PinturasVendidas.ToString(), "#C0392B");
-                            TarjetaStat(row.RelativeItem(), "Reservadas",
-                                resumen.PinturasReservadas.ToString(), "#2980B9");
-                        });
-
-                        // ── Bloque 3: Destacados ───────────────────────────
-                        col.Item().PaddingTop(16)
-                            .Text("Destacados").FontSize(12).Bold()
-                            .FontColor(ColorPrimario);
-                        col.Item().PaddingTop(6).Border(1).BorderColor(ColorBorde)
-                            .Background(ColorFondoClaro).Padding(12).Column(inner =>
-                        {
-                            FilaDestacado(inner, "Artista más prolífico",
-                                resumen.ArtistaConMasObras);
-                            FilaDestacado(inner, "Técnica más utilizada",
-                                resumen.TecnicaMasUsada);
-                        });
-                    });
-
-                    pagina.Footer().Element(PiePagina);
-                });
-            }).GeneratePdf(rutaDestino);
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        // 6. PINTURAS POR EXHIBICIÓN
-        // ─────────────────────────────────────────────────────────────────────
-
-        public static void GenerarReportePorExhibicion(
-            List<FilaExhibicion> datos,
-            string               rutaDestino)
-        {
-            Document.Create(contenedor =>
-            {
-                contenedor.Page(pagina =>
-                {
-                    pagina.Size(PageSizes.A4.Landscape());
-                    pagina.Margin(1.5f, Unit.Centimetre);
-                    pagina.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
-
-                    pagina.Header().Element(c => EncabezadoPagina(c,
-                        "Pinturas por Exhibición",
-                        $"{datos.Count} exhibiciones · " +
-                        $"{datos.Sum(e => e.Pinturas.Count)} obras exhibidas"));
-
-                    pagina.Content().PaddingTop(10).Column(col =>
-                    {
-                        foreach (var exhibicion in datos)
-                        {
-                            // Subtítulo por exhibición
-                            col.Item().PaddingTop(6)
-                                .Background(ColorSecundario).Padding(5)
-                                .Text(exhibicion.NombreExhibicion)
-                                .FontColor(ColorTextoBlanco).Bold().FontSize(10);
-
-                            if (!exhibicion.Pinturas.Any())
+                            t.ColumnsDefinition(cols =>
                             {
-                                col.Item().Padding(6)
-                                    .Text("Sin pinturas registradas en esta exhibición.")
-                                    .FontColor(ColorTextoGris).Italic();
-                                continue;
+                                cols.RelativeColumn(3f);  // Cliente
+                                cols.ConstantColumn(90);  // # Ventas
+                                cols.ConstantColumn(120); // Monto total
+                            });
+
+                            t.Header(h =>
+                            {
+                                CeldaEncabezado(h.Cell(), "Cliente");
+                                CeldaEncabezado(h.Cell(), "Núm. Compras");
+                                CeldaEncabezado(h.Cell(), "Total Gastado");
+                            });
+
+                            bool par = false;
+                            foreach (var fila in datos)
+                            {
+                                string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
+                                par = !par;
+                                CeldaDato(t.Cell(), fila.Cliente,                  fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.TotalVentas.ToString(),   fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.MontoTotal.ToString("C"), fondo, centrado: true);
                             }
 
-                            col.Item().Table(tabla =>
-                            {
-                                tabla.ColumnsDefinition(cols =>
-                                {
-                                    cols.RelativeColumn(3f);
-                                    cols.RelativeColumn(2.5f);
-                                    cols.RelativeColumn(1.8f);
-                                    cols.ConstantColumn(45);
-                                    cols.RelativeColumn(1.5f);
-                                    cols.ConstantColumn(90);
-                                    cols.ConstantColumn(80);
-                                });
-
-                                tabla.Header(h =>
-                                {
-                                    CeldaEncabezadoSub(h.Cell(), "Título");
-                                    CeldaEncabezadoSub(h.Cell(), "Artista");
-                                    CeldaEncabezadoSub(h.Cell(), "Técnica");
-                                    CeldaEncabezadoSub(h.Cell(), "Año");
-                                    CeldaEncabezadoSub(h.Cell(), "Dimensiones");
-                                    CeldaEncabezadoSub(h.Cell(), "Precio");
-                                    CeldaEncabezadoSub(h.Cell(), "Estado");
-                                });
-
-                                bool par = false;
-                                foreach (var p in exhibicion.Pinturas)
-                                {
-                                    string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
-                                    par = !par;
-                                    CeldaDato(tabla.Cell(), p.Titulo,   fondo, bold: true);
-                                    CeldaDato(tabla.Cell(), p.Artista,  fondo);
-                                    CeldaDato(tabla.Cell(), p.Tecnica,  fondo);
-                                    CeldaDato(tabla.Cell(), p.AnioCreacion?.ToString() ?? "—", fondo, centrado: true);
-                                    CeldaDato(tabla.Cell(), p.Dimensiones, fondo);
-                                    CeldaDato(tabla.Cell(), p.PrecioBase.ToString("C"), fondo, centrado: true);
-                                    CeldaEstado(tabla.Cell(), p.Estado);
-                                }
-                            });
-                        }
+                            // Fila de totales
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text("TOTALES").FontColor(ColorTextoBlanco).Bold().FontSize(9);
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text(datos.Sum(d => d.TotalVentas).ToString())
+                                .FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text(datos.Sum(d => d.MontoTotal).ToString("C"))
+                                .FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
+                        });
                     });
 
-                    pagina.Footer().Element(PiePagina);
+                    p.Footer().Element(PiePagina);
+                });
+            }).GeneratePdf(rutaDestino);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 6. VENTAS POR MES
+        // ─────────────────────────────────────────────────────────────────────
+
+        public static void GenerarVentasPorMes(
+            List<FilaVentaPorMes> datos,
+            FiltroMes             filtro,
+            string                rutaDestino)
+        {
+            string periodoLabel =
+                $"{char.ToUpper(filtro.NombreMes[0])}{filtro.NombreMes[1..]} {filtro.Anio}";
+
+            Document.Create(c =>
+            {
+                c.Page(p =>
+                {
+                    p.Size(PageSizes.A4);
+                    p.Margin(1.5f, Unit.Centimetre);
+                    p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
+
+                    p.Header().Element(h => EncabezadoPagina(h,
+                        $"Reporte de ventas — {periodoLabel}",
+                        datos.Count > 0
+                            ? $"Total: {datos.Sum(d => d.MontoTotal):C} · {datos.Sum(d => d.TotalVentas)} ventas"
+                            : "Sin ventas registradas para el periodo seleccionado"));
+
+                    p.Content().PaddingTop(10).Column(col =>
+                    {
+                        if (!datos.Any())
+                        {
+                            col.Item().PaddingTop(40).AlignCenter()
+                                .Text($"No se encontraron ventas para {periodoLabel}.")
+                                .FontColor(ColorTextoGris).FontSize(11).Italic();
+                            return;
+                        }
+
+                        col.Item().Row(row =>
+                        {
+                            TarjetaStat(row.RelativeItem(), "Meses con ventas",
+                                datos.Count.ToString(), ColorPrimario);
+                            TarjetaStat(row.RelativeItem(), "Ventas totales",
+                                datos.Sum(d => d.TotalVentas).ToString(), ColorSecundario);
+                            TarjetaStat(row.RelativeItem(), "Ingresos totales",
+                                datos.Sum(d => d.MontoTotal).ToString("C"), "#1A6E8E");
+                            TarjetaStat(row.RelativeItem(), "Promedio por venta",
+                                (datos.Sum(d => d.TotalVentas) > 0
+                                    ? datos.Sum(d => d.MontoTotal) / datos.Sum(d => d.TotalVentas)
+                                    : 0).ToString("C"),
+                                "#2E7D5C");
+                        });
+
+                        col.Item().PaddingTop(8).Table(t =>
+                        {
+                            t.ColumnsDefinition(cols =>
+                            {
+                                cols.ConstantColumn(90);  // Mes
+                                cols.ConstantColumn(90);  // # Ventas
+                                cols.ConstantColumn(120); // Monto
+                                cols.RelativeColumn();    // Participación
+                            });
+
+                            t.Header(h =>
+                            {
+                                CeldaEncabezado(h.Cell(), "Mes (yyyy-MM)");
+                                CeldaEncabezado(h.Cell(), "Núm. Ventas");
+                                CeldaEncabezado(h.Cell(), "Monto Total");
+                                CeldaEncabezado(h.Cell(), "Participación");
+                            });
+
+                            decimal totalGeneral = datos.Sum(d => d.MontoTotal);
+                            bool par = false;
+                            foreach (var fila in datos)
+                            {
+                                string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
+                                par = !par;
+                                double pct = totalGeneral > 0
+                                    ? (double)(fila.MontoTotal / totalGeneral * 100)
+                                    : 0;
+                                CeldaDato(t.Cell(), fila.Mes,                      fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.TotalVentas.ToString(),   fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.MontoTotal.ToString("C"), fondo, centrado: true);
+                                CeldaDato(t.Cell(), $"{pct:F1}%",                  fondo, centrado: true);
+                            }
+
+                            // Fila de totales
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text("TOTALES").FontColor(ColorTextoBlanco).Bold().FontSize(9);
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text(datos.Sum(d => d.TotalVentas).ToString())
+                                .FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text(datos.Sum(d => d.MontoTotal).ToString("C"))
+                                .FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
+                            t.Cell().Background(ColorPrimario).Padding(4)
+                                .Text("100%").FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
+                        });
+                    });
+
+                    p.Footer().Element(PiePagina);
                 });
             }).GeneratePdf(rutaDestino);
         }
@@ -494,14 +503,12 @@ namespace GaleriaDeArtes.ModuloReportes
         // COMPONENTES REUTILIZABLES
         // ─────────────────────────────────────────────────────────────────────
 
-        /// <summary>Encabezado estándar de página con logo textual y título.</summary>
         private static void EncabezadoPagina(IContainer c, string titulo, string subtitulo)
         {
             c.Column(col =>
             {
                 col.Item().Row(row =>
                 {
-                    // Franja izquierda con nombre de la galería
                     row.ConstantItem(140).Background(ColorPrimario).Padding(8).Column(inner =>
                     {
                         inner.Item().Text("GALERÍA DE ARTES")
@@ -510,7 +517,6 @@ namespace GaleriaDeArtes.ModuloReportes
                             .FontColor(ColorAcento).FontSize(7);
                     });
 
-                    // Título del reporte
                     row.RelativeItem().Background(ColorFondoClaro).Padding(8).Column(inner =>
                     {
                         inner.Item().Text(titulo)
@@ -519,7 +525,6 @@ namespace GaleriaDeArtes.ModuloReportes
                             .FontColor(ColorTextoGris).FontSize(8);
                     });
 
-                    // Fecha en esquina derecha
                     row.ConstantItem(110).Background(ColorFondoClaro)
                         .AlignRight().Padding(8).Column(inner =>
                     {
@@ -530,12 +535,10 @@ namespace GaleriaDeArtes.ModuloReportes
                     });
                 });
 
-                // Línea decorativa bajo el encabezado
                 col.Item().Height(3).Background(ColorAcento);
             });
         }
 
-        /// <summary>Pie de página con numeración.</summary>
         private static void PiePagina(IContainer c)
         {
             c.Column(col =>
@@ -558,7 +561,6 @@ namespace GaleriaDeArtes.ModuloReportes
             });
         }
 
-        /// <summary>Tarjeta estadística de resumen (título + valor en caja coloreada).</summary>
         private static void TarjetaStat(IContainer c, string etiqueta, string valor, string colorFondo)
         {
             c.Padding(3).Border(1).BorderColor(ColorBorde)
@@ -570,34 +572,24 @@ namespace GaleriaDeArtes.ModuloReportes
             });
         }
 
-        /// <summary>Celda de encabezado principal (vinotinto oscuro).</summary>
         private static void CeldaEncabezado(IContainer c, string texto)
         {
             c.Background(ColorPrimario).Padding(5)
              .Text(texto).FontColor(ColorTextoBlanco).Bold().FontSize(8.5f);
         }
 
-        /// <summary>Celda de encabezado secundario (vinotinto medio, para sub-secciones).</summary>
-        private static void CeldaEncabezadoSub(IContainer c, string texto)
-        {
-            c.Background(ColorSecundario).Padding(4)
-             .Text(texto).FontColor(ColorTextoBlanco).Bold().FontSize(8f);
-        }
-
-        /// <summary>Celda de dato genérico con fondo alternado.</summary>
         private static void CeldaDato(IContainer c, string texto, string fondo,
             bool bold = false, bool centrado = false, string? color = null)
         {
-            var textStyle = c.Background(fondo).BorderBottom(1).BorderColor(ColorBorde)
+            var style = c.Background(fondo).BorderBottom(1).BorderColor(ColorBorde)
                 .Padding(4).Text(texto)
                 .FontColor(color ?? "#1A1A1A")
                 .FontSize(8.5f);
 
-            if (bold)     textStyle.Bold();
-            if (centrado) textStyle.AlignCenter();
+            if (bold)     style.Bold();
+            if (centrado) style.AlignCenter();
         }
 
-        /// <summary>Celda de estado con color semafórico (disponible/vendida/reservada).</summary>
         private static void CeldaEstado(IContainer c, string estado)
         {
             string fondo = estado.ToLower() switch
@@ -617,18 +609,6 @@ namespace GaleriaDeArtes.ModuloReportes
 
             c.Background(fondo).BorderBottom(1).BorderColor(ColorBorde)
                 .Padding(4).Text(estado).FontColor(texto).Bold().FontSize(8f).AlignCenter();
-        }
-
-        /// <summary>Fila de clave-valor para el bloque de destacados del ejecutivo.</summary>
-        private static void FilaDestacado(ColumnDescriptor col, string clave, string valor)
-        {
-            col.Item().PaddingBottom(6).Row(row =>
-            {
-                row.ConstantItem(180)
-                    .Text(clave + ":").FontColor(ColorTextoGris).FontSize(10);
-                row.RelativeItem()
-                    .Text(valor).FontColor(ColorPrimario).Bold().FontSize(10);
-            });
         }
     }
 }

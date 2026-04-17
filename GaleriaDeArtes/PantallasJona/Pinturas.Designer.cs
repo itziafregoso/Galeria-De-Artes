@@ -40,6 +40,7 @@
             txtBuscar = new TextBox();
             dgvPinturas = new DataGridView();
             btnProveedor = new Button();
+            btnProveedor = new Button();
             btnReportes = new Button();
             pnlMenu.SuspendLayout();
             PnlPrincipal.SuspendLayout();
@@ -49,6 +50,8 @@
             // pnlMenu
             // 
             pnlMenu.BackColor = Color.FromArgb(21, 77, 113);
+            pnlMenu.Controls.Add(btnProveedor);
+            pnlMenu.Controls.Add(btnPinturas);
             pnlMenu.Controls.Add(btnReportes);
             pnlMenu.Controls.Add(btnProveedor);
             pnlMenu.Controls.Add(btnPinturas);
@@ -58,6 +61,22 @@
             pnlMenu.Name = "pnlMenu";
             pnlMenu.Size = new Size(188, 721);
             pnlMenu.TabIndex = 0;
+            // 
+            // btnPinturas
+            // 
+            btnPinturas.BackColor = Color.FromArgb(21, 77, 113);
+            btnPinturas.Dock = DockStyle.Top;
+            btnPinturas.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnPinturas.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnPinturas.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
+            btnPinturas.FlatStyle = FlatStyle.Flat;
+            btnPinturas.ForeColor = Color.White;
+            btnPinturas.Location = new Point(0, 60);
+            btnPinturas.Name = "btnPinturas";
+            btnPinturas.Size = new Size(188, 60);
+            btnPinturas.TabIndex = 4;
+            btnPinturas.Text = "Pinturas";
+            btnPinturas.UseVisualStyleBackColor = false;
             // 
             // btnPinturas
             // 
@@ -81,6 +100,8 @@
             btnArtistas.BackgroundImageLayout = ImageLayout.None;
             btnArtistas.Dock = DockStyle.Top;
             btnArtistas.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnArtistas.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnArtistas.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
             btnArtistas.FlatAppearance.MouseDownBackColor = Color.FromArgb(51, 161, 224);
             btnArtistas.FlatAppearance.MouseOverBackColor = Color.FromArgb(28, 110, 164);
             btnArtistas.FlatStyle = FlatStyle.Flat;
@@ -178,9 +199,26 @@
             dgvPinturas.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             dgvPinturas.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvPinturas.Size = new Size(1025, 419);
+            dgvPinturas.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvPinturas.Size = new Size(1025, 419);
             dgvPinturas.TabIndex = 0;
             // 
             // btnProveedor
+            // 
+            btnProveedor.BackColor = Color.FromArgb(21, 77, 113);
+            btnProveedor.BackgroundImageLayout = ImageLayout.None;
+            btnProveedor.Dock = DockStyle.Top;
+            btnProveedor.FlatAppearance.BorderColor = Color.FromArgb(224, 224, 224);
+            btnProveedor.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 192, 192);
+            btnProveedor.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 255, 192);
+            btnProveedor.FlatStyle = FlatStyle.Flat;
+            btnProveedor.ForeColor = Color.White;
+            btnProveedor.Location = new Point(0, 120);
+            btnProveedor.Name = "btnProveedor";
+            btnProveedor.Size = new Size(188, 60);
+            btnProveedor.TabIndex = 5;
+            btnProveedor.Text = "Proveedor";
+            btnProveedor.UseVisualStyleBackColor = false;
             // 
             btnProveedor.BackColor = Color.FromArgb(21, 77, 113);
             btnProveedor.BackgroundImageLayout = ImageLayout.None;
@@ -244,6 +282,8 @@
         private Button btnArtistas;
         private Button button2;
         private Button button1;
+        private Button btnPinturas;
+        private Button btnProveedor;
         private Button btnPinturas;
         private Button btnProveedor;
         private Button btnReportes;

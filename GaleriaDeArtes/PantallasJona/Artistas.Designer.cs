@@ -17,16 +17,13 @@ namespace GaleriaDeArtes
         {
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             pnlMenu = new Panel();
-            btnArtistas = new Button();
             btnPinturas = new Button();
-            btnReportes = new Button();
             PnlPrincipal = new Panel();
             btnEliminarArtista = new Button();
             btnEditarArtista = new Button();
             btnAgregarArtista = new Button();
             txtBuscar = new TextBox();
             dgvArtistas = new DataGridView();
-            btnProveedor = new Button();
             pnlMenu.SuspendLayout();
             PnlPrincipal.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvArtistas).BeginInit();

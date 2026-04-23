@@ -153,14 +153,13 @@ namespace GaleriaDeArtes.PantallasJona
                     dgvExhibiciones.Columns[nombre].FillWeight = peso;
             }
 
-            Peso("Nombre",        280);
-            Peso("Fecha Inicio",   75);
-            Peso("Fecha Fin",      75);
-            Peso("Temática",      150);
-            Peso("Costo Entrada",  85);
-            Peso("Total Días",     70);
-            Peso("Total Obras",    70);
-            Peso("Estado",         80);
+            Peso("Nombre",       280);
+            Peso("Fecha Inicio",  90);
+            Peso("Fecha Fin",     90);
+            Peso("Hora Inicio",   80);
+            Peso("Hora Fin",      80);
+            Peso("Total Obras",   80);
+            Peso("Estado",        90);
         }
 
         // ─────────────────────────────────────────────────────────────────────

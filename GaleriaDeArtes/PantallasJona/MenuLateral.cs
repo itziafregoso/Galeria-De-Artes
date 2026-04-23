@@ -4,7 +4,7 @@ namespace GaleriaDeArtes.PantallasJona
     /// Página activa del sistema, usada por MenuLateral para resaltar
     /// el botón correspondiente y evitar navegación redundante.
     /// </summary>
-    public enum PaginaActiva { Artistas, Pinturas, Proveedor, Reportes, Exhibiciones }
+    public enum PaginaActiva { Artistas, Pinturas, Proveedor, Reportes, Exhibiciones, Inventario }
 
     /// <summary>
     /// Menú lateral reutilizable. Se instancia pasando la página activa;
@@ -32,6 +32,7 @@ namespace GaleriaDeArtes.PantallasJona
             Controls.Add(Boton("Proveedor",    120, PaginaActiva.Proveedor,    activa));
             Controls.Add(Boton("Reportes",     180, PaginaActiva.Reportes,     activa));
             Controls.Add(Boton("Exhibiciones", 240, PaginaActiva.Exhibiciones, activa));
+            Controls.Add(Boton("Inventario",   300, PaginaActiva.Inventario,   activa));
         }
 
         private static Button Boton(string texto, int top, PaginaActiva pagina, PaginaActiva activa)

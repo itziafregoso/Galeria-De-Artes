@@ -34,6 +34,7 @@ namespace GaleriaDeArtes.PantallasJona
                 PaginaActiva.Pinturas      => new global::GaleriaDeArtes.Pinturas(),
                 PaginaActiva.Reportes      => new Reportes(),
                 PaginaActiva.Exhibiciones  => new Exhibiciones(),
+                PaginaActiva.Inventario    => new Inventario(),
                 PaginaActiva.Proveedor     => null!, // aún no implementado
                 _ => null!
             };

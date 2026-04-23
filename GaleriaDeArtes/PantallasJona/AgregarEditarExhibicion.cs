@@ -5,7 +5,7 @@ namespace GaleriaDeArtes.PantallasJona
 {
     /// <summary>
     /// Modal de alta y edición de exhibiciones.
-    /// Campos: nombre_exhibicion, fecha_inicio, fecha_fin, tematica, costo_entrada.
+    /// Campos: nombre_exhibicion, fecha_inicio, fecha_fin, hora_inicio, hora_fin.
     /// Patrón idéntico a AgregarEditarArtista: constructor dual + DialogResult.OK.
     /// </summary>
     public class AgregarEditarExhibicion : Form
@@ -17,8 +17,8 @@ namespace GaleriaDeArtes.PantallasJona
         private TextBox        txtNombre      = null!;
         private DateTimePicker dtpFechaInicio = null!;
         private DateTimePicker dtpFechaFin    = null!;
-        private TextBox        txtTematica    = null!;
-        private TextBox        txtCosto       = null!;
+        private DateTimePicker dtpHoraInicio  = null!;
+        private DateTimePicker dtpHoraFin     = null!;
 
         // ── Estado ────────────────────────────────────────────────────────────
         private readonly ExhibicionBLL _bll;
@@ -100,26 +100,29 @@ namespace GaleriaDeArtes.PantallasJona
             };
             Controls.Add(dtpFechaFin);
 
-            // ── Temática (tematica, varchar 100, nullable) ────────────────────
-            Controls.Add(Lbl("Temática:", 193));
-            txtTematica = new TextBox
+            // ── Hora inicio (hora_inicio, TIME) ──────────────────────────────
+            Controls.Add(Lbl("Hora de inicio:*", 193));
+            dtpHoraInicio = new DateTimePicker
             {
-                Location  = new Point(240, 190),
-                Size      = new Size(335, 27),
-                MaxLength = 100
+                Location   = new Point(240, 190),
+                Size       = new Size(160, 27),
+                Format     = DateTimePickerFormat.Time,
+                ShowUpDown = true,
+                Value      = DateTime.Today.AddHours(10)
             };
-            Controls.Add(txtTematica);
+            Controls.Add(dtpHoraInicio);
 
-            // ── Costo de entrada (costo_entrada, decimal, nullable/def 0) ─────
-            Controls.Add(Lbl("Costo de entrada ($):", 243));
-            txtCosto = new TextBox
+            // ── Hora fin (hora_fin, TIME) ─────────────────────────────────────
+            Controls.Add(Lbl("Hora de fin:*", 243));
+            dtpHoraFin = new DateTimePicker
             {
-                Location     = new Point(240, 240),
-                Size         = new Size(130, 27),
-                Text         = "0.00",
-                TextAlign    = HorizontalAlignment.Right
+                Location   = new Point(240, 240),
+                Size       = new Size(160, 27),
+                Format     = DateTimePickerFormat.Time,
+                ShowUpDown = true,
+                Value      = DateTime.Today.AddHours(18)
             };
-            Controls.Add(txtCosto);
+            Controls.Add(dtpHoraFin);
 
             // ── Botones ───────────────────────────────────────────────────────
             var btnGuardar = new Button
@@ -164,11 +167,11 @@ namespace GaleriaDeArtes.PantallasJona
         {
             if (_exhibicion == null) return;
 
-            txtNombre.Text        = _exhibicion.NombreExhibicion;
-            dtpFechaInicio.Value  = _exhibicion.FechaInicio;
-            dtpFechaFin.Value     = _exhibicion.FechaFin;
-            txtTematica.Text      = _exhibicion.Tematica;
-            txtCosto.Text         = _exhibicion.CostoEntrada.ToString("F2");
+            txtNombre.Text       = _exhibicion.NombreExhibicion;
+            dtpFechaInicio.Value = _exhibicion.FechaInicio;
+            dtpFechaFin.Value    = _exhibicion.FechaFin;
+            dtpHoraInicio.Value  = DateTime.Today.Add(_exhibicion.HoraInicio);
+            dtpHoraFin.Value     = DateTime.Today.Add(_exhibicion.HoraFin);
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -177,23 +180,14 @@ namespace GaleriaDeArtes.PantallasJona
 
         private void BtnGuardar_Click(object? sender, EventArgs e)
         {
-            // Validar costo
-            if (!decimal.TryParse(txtCosto.Text.Trim(), out decimal costo) || costo < 0)
-            {
-                MessageBox.Show("El costo de entrada debe ser un número válido mayor o igual a 0.",
-                    "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                txtCosto.Focus();
-                return;
-            }
-
             var exhibicion = new Exhibicion
             {
                 IdExhibicion     = _esEdicion && _exhibicion != null ? _exhibicion.IdExhibicion : 0,
                 NombreExhibicion = txtNombre.Text.Trim(),
                 FechaInicio      = dtpFechaInicio.Value.Date,
                 FechaFin         = dtpFechaFin.Value.Date,
-                Tematica         = txtTematica.Text.Trim(),
-                CostoEntrada     = costo
+                HoraInicio       = dtpHoraInicio.Value.TimeOfDay,
+                HoraFin          = dtpHoraFin.Value.TimeOfDay
             };
 
             var (ok, mensaje) = _esEdicion

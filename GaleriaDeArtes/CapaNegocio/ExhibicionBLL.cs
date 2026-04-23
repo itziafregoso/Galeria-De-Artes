@@ -46,8 +46,8 @@ namespace GaleriaDeArtes.CapaNegocio
             if (e.FechaFin < e.FechaInicio)
                 return (false, "La fecha de fin no puede ser anterior a la fecha de inicio.");
 
-            if (e.CostoEntrada < 0)
-                return (false, "El costo de entrada no puede ser negativo.");
+            if (e.FechaFin == e.FechaInicio && e.HoraFin <= e.HoraInicio)
+                return (false, "La hora de fin debe ser posterior a la hora de inicio.");
 
             return (true, "");
         }

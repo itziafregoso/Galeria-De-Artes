@@ -50,6 +50,19 @@ CREATE TABLE dbo.COMPRA (
 );
 GO
 
+-- 5. PIEZA (unidad física de cada obra — base del inventario dinámico)
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('dbo.PIEZA') AND type = 'U')
+CREATE TABLE dbo.PIEZA (
+    id_pieza      INT           IDENTITY(1,1) PRIMARY KEY,
+    id_pintura    INT           NOT NULL REFERENCES dbo.PINTURA(id_pintura),
+    descripcion   NVARCHAR(200) NULL,
+    estado_fisico NVARCHAR(50)  NOT NULL DEFAULT 'Disponible'
+        CONSTRAINT CK_PIEZA_estado CHECK (
+            estado_fisico IN ('Disponible', 'Vendida', 'En Exhibición', 'Dañada', 'En Restauración')
+        )
+);
+GO
+
 -- ============================================================
 -- Datos de muestra (comentar si ya existen registros)
 -- ============================================================

@@ -10,7 +10,7 @@ namespace GaleriaDeArtes.CapaDatos
     ///
     /// Esquema real confirmado:
     ///   EXHIBICION        : id_exhibicion PK, nombre_exhibicion, fecha_inicio,
-    ///                       fecha_fin, tematica (null), costo_entrada (null, def 0)
+    ///                       fecha_fin, hora_inicio (TIME), hora_fin (TIME)
     ///   DETALLE_EXHIBICION: id_det_exhibicion PK, id_exhibicion (null FK), id_pintura (null FK)
     ///   FK on delete      : NO_ACTION  → se deben borrar detalles antes que la cabecera
     /// </summary>
@@ -27,9 +27,8 @@ namespace GaleriaDeArtes.CapaDatos
                     e.nombre_exhibicion                                      AS [Nombre],
                     CONVERT(NVARCHAR(10), e.fecha_inicio, 103)               AS [Fecha Inicio],
                     CONVERT(NVARCHAR(10), e.fecha_fin,    103)               AS [Fecha Fin],
-                    ISNULL(e.tematica, '—')                                  AS [Temática],
-                    e.costo_entrada                                          AS [Costo Entrada],
-                    DATEDIFF(day, e.fecha_inicio, e.fecha_fin) + 1           AS [Total Días],
+                    CONVERT(VARCHAR(5),   e.hora_inicio,  108)               AS [Hora Inicio],
+                    CONVERT(VARCHAR(5),   e.hora_fin,     108)               AS [Hora Fin],
                     ISNULL(de.total_obras, 0)                                AS [Total Obras],
                     CASE
                         WHEN CAST(GETDATE() AS DATE) < e.fecha_inicio THEN 'Próxima'
@@ -74,10 +73,8 @@ namespace GaleriaDeArtes.CapaDatos
                 NombreExhibicion = r["nombre_exhibicion"]?.ToString() ?? "",
                 FechaInicio      = r.GetDateTime(r.GetOrdinal("fecha_inicio")),
                 FechaFin         = r.GetDateTime(r.GetOrdinal("fecha_fin")),
-                Tematica         = r["tematica"] == DBNull.Value
-                                   ? "" : r["tematica"].ToString()!,
-                CostoEntrada     = r["costo_entrada"] == DBNull.Value
-                                   ? 0m : Convert.ToDecimal(r["costo_entrada"])
+                HoraInicio       = r["hora_inicio"] == DBNull.Value ? TimeSpan.Zero : (TimeSpan)r["hora_inicio"],
+                HoraFin          = r["hora_fin"]   == DBNull.Value ? TimeSpan.Zero : (TimeSpan)r["hora_fin"]
             };
         }
 
@@ -87,9 +84,9 @@ namespace GaleriaDeArtes.CapaDatos
         {
             const string sql = @"
                 INSERT INTO dbo.EXHIBICION
-                    (nombre_exhibicion, fecha_inicio, fecha_fin, tematica, costo_entrada)
+                    (nombre_exhibicion, fecha_inicio, fecha_fin, hora_inicio, hora_fin)
                 VALUES
-                    (@nombre, @fechaInicio, @fechaFin, @tematica, @costoEntrada)";
+                    (@nombre, @fechaInicio, @fechaFin, @horaInicio, @horaFin)";
 
             using SqlConnection conn = Conexion.ObtenerConexion();
             using SqlCommand    cmd  = new(sql, conn);
@@ -107,8 +104,8 @@ namespace GaleriaDeArtes.CapaDatos
                     nombre_exhibicion = @nombre,
                     fecha_inicio      = @fechaInicio,
                     fecha_fin         = @fechaFin,
-                    tematica          = @tematica,
-                    costo_entrada     = @costoEntrada
+                    hora_inicio       = @horaInicio,
+                    hora_fin          = @horaFin
                 WHERE id_exhibicion = @id";
 
             using SqlConnection conn = Conexion.ObtenerConexion();
@@ -264,11 +261,10 @@ namespace GaleriaDeArtes.CapaDatos
         private static void AgregarParametros(SqlCommand cmd, Exhibicion e)
         {
             cmd.Parameters.AddWithValue("@nombre", e.NombreExhibicion);
-            cmd.Parameters.Add("@fechaInicio",  SqlDbType.Date).Value = e.FechaInicio.Date;
-            cmd.Parameters.Add("@fechaFin",     SqlDbType.Date).Value = e.FechaFin.Date;
-            cmd.Parameters.AddWithValue("@tematica",
-                string.IsNullOrWhiteSpace(e.Tematica) ? DBNull.Value : (object)e.Tematica);
-            cmd.Parameters.AddWithValue("@costoEntrada", e.CostoEntrada);
+            cmd.Parameters.Add("@fechaInicio", SqlDbType.Date).Value = e.FechaInicio.Date;
+            cmd.Parameters.Add("@fechaFin",    SqlDbType.Date).Value = e.FechaFin.Date;
+            cmd.Parameters.Add("@horaInicio",  SqlDbType.Time).Value = e.HoraInicio;
+            cmd.Parameters.Add("@horaFin",     SqlDbType.Time).Value = e.HoraFin;
         }
     }
 }

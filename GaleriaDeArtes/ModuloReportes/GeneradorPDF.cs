@@ -30,9 +30,7 @@ namespace GaleriaDeArtes.ModuloReportes
             FiltroFechas?          filtro,
             string                 rutaDestino)
         {
-            string subtitulo = filtro?.TieneFiltros == true
-                ? $"{filtro.FechaDesde:dd/MM/yyyy} — {filtro.FechaHasta:dd/MM/yyyy}"
-                : "Todas las fechas";
+            string subtitulo = filtro?.DescripcionPeriodo() ?? "Todas las fechas";
 
             Document.Create(c =>
             {
@@ -61,10 +59,10 @@ namespace GaleriaDeArtes.ModuloReportes
                         {
                             t.ColumnsDefinition(cols =>
                             {
-                                cols.RelativeColumn(3f);   // Pintura
-                                cols.RelativeColumn(2.5f); // Cliente
-                                cols.ConstantColumn(100);  // Fecha
-                                cols.ConstantColumn(100);  // Precio
+                                cols.RelativeColumn(3f);
+                                cols.RelativeColumn(2.5f);
+                                cols.ConstantColumn(100);
+                                cols.ConstantColumn(100);
                             });
 
                             t.Header(h =>
@@ -80,10 +78,10 @@ namespace GaleriaDeArtes.ModuloReportes
                             {
                                 string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
                                 par = !par;
-                                CeldaDato(t.Cell(), fila.Titulo,                      fondo, bold: true);
-                                CeldaDato(t.Cell(), fila.Cliente,                     fondo);
+                                CeldaDato(t.Cell(), fila.Titulo,                           fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.Cliente,                          fondo);
                                 CeldaDato(t.Cell(), fila.FechaVenta.ToString("dd/MM/yyyy"), fondo, centrado: true);
-                                CeldaDato(t.Cell(), fila.PrecioVenta.ToString("C"),   fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.PrecioVenta.ToString("C"),        fondo, centrado: true);
                             }
                         });
                     });
@@ -99,8 +97,13 @@ namespace GaleriaDeArtes.ModuloReportes
 
         public static void GenerarTopPinturas(
             List<FilaTopPintura> datos,
+            FiltroFechas?        filtro,
             string               rutaDestino)
         {
+            string subtitulo = filtro?.TieneFiltros == true
+                ? $"Periodo: {filtro.DescripcionPeriodo()}"
+                : "Ordenadas por cantidad de ventas descendente";
+
             Document.Create(c =>
             {
                 c.Page(p =>
@@ -109,9 +112,7 @@ namespace GaleriaDeArtes.ModuloReportes
                     p.Margin(1.5f, Unit.Centimetre);
                     p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
 
-                    p.Header().Element(h => EncabezadoPagina(h,
-                        "Top 10 Pinturas Más Vendidas",
-                        $"Ordenadas por cantidad de ventas descendente"));
+                    p.Header().Element(h => EncabezadoPagina(h, "Top 10 Pinturas Más Vendidas", subtitulo));
 
                     p.Content().PaddingTop(10).Column(col =>
                     {
@@ -129,11 +130,11 @@ namespace GaleriaDeArtes.ModuloReportes
                         {
                             t.ColumnsDefinition(cols =>
                             {
-                                cols.ConstantColumn(35);   // #
-                                cols.RelativeColumn(3f);   // Pintura
-                                cols.RelativeColumn(2.5f); // Artista
-                                cols.ConstantColumn(80);   // Veces vendida
-                                cols.ConstantColumn(100);  // Ingreso total
+                                cols.ConstantColumn(35);
+                                cols.RelativeColumn(3f);
+                                cols.RelativeColumn(2.5f);
+                                cols.ConstantColumn(80);
+                                cols.ConstantColumn(100);
                             });
 
                             t.Header(h =>
@@ -141,7 +142,7 @@ namespace GaleriaDeArtes.ModuloReportes
                                 CeldaEncabezado(h.Cell(), "#");
                                 CeldaEncabezado(h.Cell(), "Pintura");
                                 CeldaEncabezado(h.Cell(), "Artista");
-                                CeldaEncabezado(h.Cell(), "Veces Vendida");
+                                CeldaEncabezado(h.Cell(), "Núm. Ventas");
                                 CeldaEncabezado(h.Cell(), "Ingreso Total");
                             });
 
@@ -150,11 +151,11 @@ namespace GaleriaDeArtes.ModuloReportes
                             {
                                 string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
                                 par = !par;
-                                CeldaDato(t.Cell(), fila.Posicion.ToString(),          fondo, centrado: true);
-                                CeldaDato(t.Cell(), fila.Titulo,                       fondo, bold: true);
-                                CeldaDato(t.Cell(), fila.Artista,                      fondo);
-                                CeldaDato(t.Cell(), fila.VecesVendida.ToString(),      fondo, centrado: true);
-                                CeldaDato(t.Cell(), fila.IngresoTotal.ToString("C"),   fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.Posicion.ToString(),        fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.Titulo,                     fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.Artista,                    fondo);
+                                CeldaDato(t.Cell(), fila.VecesVendida.ToString(),    fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.IngresoTotal.ToString("C"), fondo, centrado: true);
                             }
                         });
                     });
@@ -166,15 +167,17 @@ namespace GaleriaDeArtes.ModuloReportes
 
         // ─────────────────────────────────────────────────────────────────────
         // 3. INVENTARIO ACTUAL
+        // Incluye columna Stock = piezas disponibles (tabla PIEZA).
         // ─────────────────────────────────────────────────────────────────────
 
         public static void GenerarInventarioActual(
             List<FilaInventario> datos,
             string               rutaDestino)
         {
-            int disponibles = datos.Count(d => d.Estado.Equals("Disponible", StringComparison.OrdinalIgnoreCase));
-            int vendidas    = datos.Count(d => d.Estado.Equals("Vendida",    StringComparison.OrdinalIgnoreCase));
-            int reservadas  = datos.Count(d => d.Estado.Equals("Reservada",  StringComparison.OrdinalIgnoreCase));
+            int disponibles  = datos.Count(d => d.Estado.Equals("Disponible",  StringComparison.OrdinalIgnoreCase));
+            int vendidas     = datos.Count(d => d.Estado.Equals("Vendida",     StringComparison.OrdinalIgnoreCase));
+            int reservadas   = datos.Count(d => d.Estado.Equals("Reservada",   StringComparison.OrdinalIgnoreCase));
+            int totalPiezas  = datos.Sum(d => d.Stock);
 
             Document.Create(c =>
             {
@@ -186,20 +189,20 @@ namespace GaleriaDeArtes.ModuloReportes
 
                     p.Header().Element(h => EncabezadoPagina(h,
                         "Inventario Actual",
-                        $"Total: {datos.Count} pinturas · Valor: {datos.Sum(d => d.PrecioBase):C}"));
+                        $"Total: {datos.Count} obras · Piezas disponibles: {totalPiezas}"));
 
                     p.Content().PaddingTop(10).Column(col =>
                     {
                         col.Item().Row(row =>
                         {
-                            TarjetaStat(row.RelativeItem(), "Total pinturas",
+                            TarjetaStat(row.RelativeItem(), "Total obras",
                                 datos.Count.ToString(), ColorPrimario);
+                            TarjetaStat(row.RelativeItem(), "Piezas disponibles",
+                                totalPiezas.ToString(), "#2E7D5C");
                             TarjetaStat(row.RelativeItem(), "Disponibles",
-                                disponibles.ToString(), "#2E7D5C");
+                                disponibles.ToString(), ColorSecundario);
                             TarjetaStat(row.RelativeItem(), "Vendidas",
                                 vendidas.ToString(), "#C0392B");
-                            TarjetaStat(row.RelativeItem(), "Reservadas",
-                                reservadas.ToString(), "#2980B9");
                         });
 
                         col.Item().PaddingTop(8).Table(t =>
@@ -210,8 +213,9 @@ namespace GaleriaDeArtes.ModuloReportes
                                 cols.RelativeColumn(2.5f); // Artista
                                 cols.RelativeColumn(1.8f); // Técnica
                                 cols.RelativeColumn(1.5f); // Dimensiones
-                                cols.ConstantColumn(90);   // Precio
-                                cols.ConstantColumn(80);   // Estado
+                                cols.ConstantColumn(80);   // Precio
+                                cols.ConstantColumn(55);   // Stock
+                                cols.ConstantColumn(75);   // Estado
                             });
 
                             t.Header(h =>
@@ -221,6 +225,7 @@ namespace GaleriaDeArtes.ModuloReportes
                                 CeldaEncabezado(h.Cell(), "Técnica");
                                 CeldaEncabezado(h.Cell(), "Dimensiones");
                                 CeldaEncabezado(h.Cell(), "Precio Base");
+                                CeldaEncabezado(h.Cell(), "Stock");
                                 CeldaEncabezado(h.Cell(), "Estado");
                             });
 
@@ -229,11 +234,13 @@ namespace GaleriaDeArtes.ModuloReportes
                             {
                                 string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
                                 par = !par;
-                                CeldaDato(t.Cell(), fila.Titulo,                  fondo, bold: true);
-                                CeldaDato(t.Cell(), fila.Artista,                 fondo);
-                                CeldaDato(t.Cell(), fila.Tecnica,                 fondo);
-                                CeldaDato(t.Cell(), fila.Dimensiones,             fondo);
+                                CeldaDato(t.Cell(), fila.Titulo,                   fondo, bold: true);
+                                CeldaDato(t.Cell(), fila.Artista,                  fondo);
+                                CeldaDato(t.Cell(), fila.Tecnica,                  fondo);
+                                CeldaDato(t.Cell(), fila.Dimensiones,              fondo);
                                 CeldaDato(t.Cell(), fila.PrecioBase.ToString("C"), fondo, centrado: true);
+                                CeldaDato(t.Cell(), fila.Stock.ToString(),         fondo, centrado: true,
+                                    color: fila.Stock == 0 ? "#C0392B" : "#155724");
                                 CeldaEstado(t.Cell(), fila.Estado);
                             }
                         });
@@ -250,8 +257,11 @@ namespace GaleriaDeArtes.ModuloReportes
 
         public static void GenerarComprasPorProveedor(
             List<FilaCompraPorProveedor> datos,
+            FiltroFechas?                filtro,
             string                       rutaDestino)
         {
+            string subtitulo = ConstruirSubtituloFiltro(filtro, "proveedor");
+
             Document.Create(c =>
             {
                 c.Page(p =>
@@ -260,9 +270,7 @@ namespace GaleriaDeArtes.ModuloReportes
                     p.Margin(1.5f, Unit.Centimetre);
                     p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
 
-                    p.Header().Element(h => EncabezadoPagina(h,
-                        "Compras por Proveedor",
-                        $"{datos.Count} proveedores · Total comprado: {datos.Sum(d => d.MontoTotal):C}"));
+                    p.Header().Element(h => EncabezadoPagina(h, "Compras por Proveedor", subtitulo));
 
                     p.Content().PaddingTop(10).Column(col =>
                     {
@@ -280,10 +288,10 @@ namespace GaleriaDeArtes.ModuloReportes
                         {
                             t.ColumnsDefinition(cols =>
                             {
-                                cols.RelativeColumn(3f);   // Proveedor
-                                cols.ConstantColumn(90);   // # Compras
-                                cols.ConstantColumn(110);  // Monto total
-                                cols.ConstantColumn(100);  // Última compra
+                                cols.RelativeColumn(3f);
+                                cols.ConstantColumn(90);
+                                cols.ConstantColumn(110);
+                                cols.ConstantColumn(100);
                             });
 
                             t.Header(h =>
@@ -327,8 +335,11 @@ namespace GaleriaDeArtes.ModuloReportes
 
         public static void GenerarVentasPorCliente(
             List<FilaVentaPorCliente> datos,
+            FiltroFechas?             filtro,
             string                    rutaDestino)
         {
+            string subtitulo = ConstruirSubtituloFiltro(filtro, "cliente");
+
             Document.Create(c =>
             {
                 c.Page(p =>
@@ -337,9 +348,7 @@ namespace GaleriaDeArtes.ModuloReportes
                     p.Margin(1.5f, Unit.Centimetre);
                     p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
 
-                    p.Header().Element(h => EncabezadoPagina(h,
-                        "Ventas por Cliente",
-                        $"{datos.Count} clientes · Total: {datos.Sum(d => d.MontoTotal):C}"));
+                    p.Header().Element(h => EncabezadoPagina(h, "Ventas por Cliente", subtitulo));
 
                     p.Content().PaddingTop(10).Column(col =>
                     {
@@ -347,7 +356,7 @@ namespace GaleriaDeArtes.ModuloReportes
                         {
                             TarjetaStat(row.RelativeItem(), "Clientes",
                                 datos.Count.ToString(), ColorPrimario);
-                            TarjetaStat(row.RelativeItem(), "Ventas totales",
+                            TarjetaStat(row.RelativeItem(), "Total ventas",
                                 datos.Sum(d => d.TotalVentas).ToString(), ColorSecundario);
                             TarjetaStat(row.RelativeItem(), "Monto total",
                                 datos.Sum(d => d.MontoTotal).ToString("C"), "#1A6E8E");
@@ -357,15 +366,15 @@ namespace GaleriaDeArtes.ModuloReportes
                         {
                             t.ColumnsDefinition(cols =>
                             {
-                                cols.RelativeColumn(3f);  // Cliente
-                                cols.ConstantColumn(90);  // # Ventas
-                                cols.ConstantColumn(120); // Monto total
+                                cols.RelativeColumn(3f);
+                                cols.ConstantColumn(90);
+                                cols.ConstantColumn(120);
                             });
 
                             t.Header(h =>
                             {
                                 CeldaEncabezado(h.Cell(), "Cliente");
-                                CeldaEncabezado(h.Cell(), "Núm. Compras");
+                                CeldaEncabezado(h.Cell(), "Núm. Ventas");
                                 CeldaEncabezado(h.Cell(), "Total Gastado");
                             });
 
@@ -397,7 +406,7 @@ namespace GaleriaDeArtes.ModuloReportes
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // 6. VENTAS POR MES
+        // 6. VENTAS POR MES  (sin columna "Participación" — siempre 100%)
         // ─────────────────────────────────────────────────────────────────────
 
         public static void GenerarVentasPorMes(
@@ -417,7 +426,7 @@ namespace GaleriaDeArtes.ModuloReportes
                     p.DefaultTextStyle(x => x.FontFamily("Segoe UI").FontSize(9));
 
                     p.Header().Element(h => EncabezadoPagina(h,
-                        $"Reporte de ventas — {periodoLabel}",
+                        $"Reporte de Ventas — {periodoLabel}",
                         datos.Count > 0
                             ? $"Total: {datos.Sum(d => d.MontoTotal):C} · {datos.Sum(d => d.TotalVentas)} ventas"
                             : "Sin ventas registradas para el periodo seleccionado"));
@@ -434,27 +443,24 @@ namespace GaleriaDeArtes.ModuloReportes
 
                         col.Item().Row(row =>
                         {
-                            TarjetaStat(row.RelativeItem(), "Meses con ventas",
-                                datos.Count.ToString(), ColorPrimario);
-                            TarjetaStat(row.RelativeItem(), "Ventas totales",
-                                datos.Sum(d => d.TotalVentas).ToString(), ColorSecundario);
+                            TarjetaStat(row.RelativeItem(), "Núm. ventas",
+                                datos.Sum(d => d.TotalVentas).ToString(), ColorPrimario);
                             TarjetaStat(row.RelativeItem(), "Ingresos totales",
-                                datos.Sum(d => d.MontoTotal).ToString("C"), "#1A6E8E");
+                                datos.Sum(d => d.MontoTotal).ToString("C"), ColorSecundario);
                             TarjetaStat(row.RelativeItem(), "Promedio por venta",
                                 (datos.Sum(d => d.TotalVentas) > 0
                                     ? datos.Sum(d => d.MontoTotal) / datos.Sum(d => d.TotalVentas)
                                     : 0).ToString("C"),
-                                "#2E7D5C");
+                                "#1A6E8E");
                         });
 
                         col.Item().PaddingTop(8).Table(t =>
                         {
                             t.ColumnsDefinition(cols =>
                             {
-                                cols.ConstantColumn(90);  // Mes
-                                cols.ConstantColumn(90);  // # Ventas
-                                cols.ConstantColumn(120); // Monto
-                                cols.RelativeColumn();    // Participación
+                                cols.ConstantColumn(110); // Mes
+                                cols.ConstantColumn(100); // # Ventas
+                                cols.ConstantColumn(130); // Monto
                             });
 
                             t.Header(h =>
@@ -462,22 +468,16 @@ namespace GaleriaDeArtes.ModuloReportes
                                 CeldaEncabezado(h.Cell(), "Mes (yyyy-MM)");
                                 CeldaEncabezado(h.Cell(), "Núm. Ventas");
                                 CeldaEncabezado(h.Cell(), "Monto Total");
-                                CeldaEncabezado(h.Cell(), "Participación");
                             });
 
-                            decimal totalGeneral = datos.Sum(d => d.MontoTotal);
                             bool par = false;
                             foreach (var fila in datos)
                             {
                                 string fondo = par ? ColorFondaTabla : ColorTextoBlanco;
                                 par = !par;
-                                double pct = totalGeneral > 0
-                                    ? (double)(fila.MontoTotal / totalGeneral * 100)
-                                    : 0;
                                 CeldaDato(t.Cell(), fila.Mes,                      fondo, centrado: true);
                                 CeldaDato(t.Cell(), fila.TotalVentas.ToString(),   fondo, centrado: true);
                                 CeldaDato(t.Cell(), fila.MontoTotal.ToString("C"), fondo, centrado: true);
-                                CeldaDato(t.Cell(), $"{pct:F1}%",                  fondo, centrado: true);
                             }
 
                             // Fila de totales
@@ -489,8 +489,6 @@ namespace GaleriaDeArtes.ModuloReportes
                             t.Cell().Background(ColorPrimario).Padding(4)
                                 .Text(datos.Sum(d => d.MontoTotal).ToString("C"))
                                 .FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
-                            t.Cell().Background(ColorPrimario).Padding(4)
-                                .Text("100%").FontColor(ColorTextoBlanco).Bold().FontSize(9).AlignCenter();
                         });
                     });
 
@@ -502,6 +500,16 @@ namespace GaleriaDeArtes.ModuloReportes
         // ─────────────────────────────────────────────────────────────────────
         // COMPONENTES REUTILIZABLES
         // ─────────────────────────────────────────────────────────────────────
+
+        private static string ConstruirSubtituloFiltro(FiltroFechas? filtro, string entidad)
+        {
+            var partes = new List<string>();
+            if (filtro?.FechaDesde.HasValue == true || filtro?.FechaHasta.HasValue == true)
+                partes.Add($"Periodo: {filtro!.DescripcionPeriodo()}");
+            if (!string.IsNullOrWhiteSpace(filtro?.TextoBusqueda))
+                partes.Add($"Búsqueda {entidad}: \"{filtro!.TextoBusqueda}\"");
+            return partes.Count > 0 ? string.Join(" · ", partes) : "Todos los registros";
+        }
 
         private static void EncabezadoPagina(IContainer c, string titulo, string subtitulo)
         {

@@ -33,6 +33,8 @@ namespace GaleriaDeArtes.CapaEntidad.Reportes
         public string  Dimensiones { get; set; } = "";
         public decimal PrecioBase  { get; set; }
         public string  Estado      { get; set; } = "";
+        /// <summary>Piezas con estado_fisico = 'Disponible' en la tabla PIEZA.</summary>
+        public int     Stock       { get; set; }
     }
 
     /// <summary>Fila del reporte Compras agrupadas por Proveedor.</summary>

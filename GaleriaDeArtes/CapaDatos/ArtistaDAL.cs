@@ -13,12 +13,14 @@ namespace GaleriaDeArtes.CapaDatos
             string query = @"
                 SELECT
                     id_artista,
-                    nombre_completo     AS [Nombre Completo],
-                    nacionalidad        AS [Nacionalidad],
-                    fecha_nacimiento    AS [Fecha de Nacimiento],
-                    estilo_predominante AS [Estilo Predominante],
-                    biografia           AS [Biografía]
-                FROM dbo.ARTISTA";
+                    ISNULL(nombre, '')           AS [Nombre],
+                    ISNULL(apellido_paterno, '') AS [Apellido Paterno],
+                    ISNULL(apellido_materno, '') AS [Apellido Materno],
+                    ISNULL(correo, '')           AS [Correo],
+                    ISNULL(telefono, '')         AS [Teléfono],
+                    fecha_nacimiento             AS [Fecha de Nacimiento]
+                FROM dbo.ARTISTA
+                ORDER BY apellido_paterno, nombre";
 
             using SqlConnection conn = Conexion.ObtenerConexion();
             using SqlCommand cmd = new SqlCommand(query, conn);
@@ -44,10 +46,19 @@ namespace GaleriaDeArtes.CapaDatos
             {
                 IdArtista          = reader.GetInt32(reader.GetOrdinal("id_artista")),
                 NombreCompleto     = reader["nombre_completo"]?.ToString() ?? "",
-                Nacionalidad       = reader["nacionalidad"] == DBNull.Value ? "" : reader["nacionalidad"].ToString()!,
+                Nombre             = reader["nombre"] == DBNull.Value ? "" : reader["nombre"].ToString()!,
+                ApellidoPaterno    = reader["apellido_paterno"] == DBNull.Value ? "" : reader["apellido_paterno"].ToString()!,
+                ApellidoMaterno    = reader["apellido_materno"] == DBNull.Value ? "" : reader["apellido_materno"].ToString()!,
+                Correo             = reader["correo"] == DBNull.Value ? "" : reader["correo"].ToString()!,
+                Telefono           = reader["telefono"] == DBNull.Value ? "" : reader["telefono"].ToString()!,
                 FechaNacimiento    = reader["fecha_nacimiento"] == DBNull.Value
                                         ? null
                                         : reader.GetDateTime(reader.GetOrdinal("fecha_nacimiento")),
+                Calle              = reader["calle"] == DBNull.Value ? "" : reader["calle"].ToString()!,
+                Colonia            = reader["colonia"] == DBNull.Value ? "" : reader["colonia"].ToString()!,
+                Ciudad             = reader["ciudad"] == DBNull.Value ? "" : reader["ciudad"].ToString()!,
+                CodigoPostal       = reader["codigo_postal"] == DBNull.Value ? "" : reader["codigo_postal"].ToString()!,
+                Nacionalidad       = reader["nacionalidad"] == DBNull.Value ? "" : reader["nacionalidad"].ToString()!,
                 EstiloPredominante = reader["estilo_predominante"] == DBNull.Value ? "" : reader["estilo_predominante"].ToString()!,
                 Biografia          = reader["biografia"] == DBNull.Value ? "" : reader["biografia"].ToString()!
             };
@@ -55,42 +66,53 @@ namespace GaleriaDeArtes.CapaDatos
 
         public void Insertar(Artista a)
         {
+            string nombreCompleto = $"{a.Nombre} {a.ApellidoPaterno} {a.ApellidoMaterno}".Trim();
+
             string query = @"
                 INSERT INTO dbo.ARTISTA
-                    (nombre_completo, nacionalidad, fecha_nacimiento, estilo_predominante, biografia)
+                    (nombre_completo, nombre, apellido_paterno, apellido_materno,
+                     correo, telefono, fecha_nacimiento,
+                     calle, colonia, ciudad, codigo_postal,
+                     nacionalidad, estilo_predominante, biografia)
                 VALUES
-                    (@nombre, @nac, @fecha, @estilo, @bio)";
+                    (@nombreCompleto, @nombre, @apellidoP, @apellidoM,
+                     @correo, @telefono, @fecha,
+                     @calle, @colonia, @ciudad, @cp,
+                     @nac, @estilo, @bio)";
 
             using SqlConnection conn = Conexion.ObtenerConexion();
             using SqlCommand cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@nombre", a.NombreCompleto);
-            cmd.Parameters.AddWithValue("@nac",    string.IsNullOrEmpty(a.Nacionalidad)       ? DBNull.Value : a.Nacionalidad);
-            cmd.Parameters.Add("@fecha", SqlDbType.DateTime2).Value = a.FechaNacimiento.HasValue ? a.FechaNacimiento.Value : DBNull.Value;
-            cmd.Parameters.AddWithValue("@estilo", string.IsNullOrEmpty(a.EstiloPredominante) ? DBNull.Value : a.EstiloPredominante);
-            cmd.Parameters.AddWithValue("@bio",    string.IsNullOrEmpty(a.Biografia)           ? DBNull.Value : a.Biografia);
+            AgregarParametros(cmd, a, nombreCompleto);
             conn.Open();
             cmd.ExecuteNonQuery();
         }
 
         public void Actualizar(Artista a)
         {
+            string nombreCompleto = $"{a.Nombre} {a.ApellidoPaterno} {a.ApellidoMaterno}".Trim();
+
             string query = @"
                 UPDATE dbo.ARTISTA SET
-                    nombre_completo     = @nombre,
-                    nacionalidad        = @nac,
-                    fecha_nacimiento    = @fecha,
+                    nombre_completo    = @nombreCompleto,
+                    nombre             = @nombre,
+                    apellido_paterno   = @apellidoP,
+                    apellido_materno   = @apellidoM,
+                    correo             = @correo,
+                    telefono           = @telefono,
+                    fecha_nacimiento   = @fecha,
+                    calle              = @calle,
+                    colonia            = @colonia,
+                    ciudad             = @ciudad,
+                    codigo_postal      = @cp,
+                    nacionalidad       = @nac,
                     estilo_predominante = @estilo,
-                    biografia           = @bio
+                    biografia          = @bio
                 WHERE id_artista = @id";
 
             using SqlConnection conn = Conexion.ObtenerConexion();
             using SqlCommand cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@nombre", a.NombreCompleto);
-            cmd.Parameters.AddWithValue("@nac",    string.IsNullOrEmpty(a.Nacionalidad)       ? DBNull.Value : a.Nacionalidad);
-            cmd.Parameters.Add("@fecha", SqlDbType.DateTime2).Value = a.FechaNacimiento.HasValue ? a.FechaNacimiento.Value : DBNull.Value;
-            cmd.Parameters.AddWithValue("@estilo", string.IsNullOrEmpty(a.EstiloPredominante) ? DBNull.Value : a.EstiloPredominante);
-            cmd.Parameters.AddWithValue("@bio",    string.IsNullOrEmpty(a.Biografia)           ? DBNull.Value : a.Biografia);
-            cmd.Parameters.AddWithValue("@id",     a.IdArtista);
+            AgregarParametros(cmd, a, nombreCompleto);
+            cmd.Parameters.AddWithValue("@id", a.IdArtista);
             conn.Open();
             cmd.ExecuteNonQuery();
         }
@@ -133,6 +155,25 @@ namespace GaleriaDeArtes.CapaDatos
                 tx.Rollback();
                 throw;
             }
+        }
+
+        private static void AgregarParametros(SqlCommand cmd, Artista a, string nombreCompleto)
+        {
+            cmd.Parameters.AddWithValue("@nombreCompleto", nombreCompleto);
+            cmd.Parameters.AddWithValue("@nombre",    a.Nombre);
+            cmd.Parameters.AddWithValue("@apellidoP", a.ApellidoPaterno);
+            cmd.Parameters.AddWithValue("@apellidoM", a.ApellidoMaterno);
+            cmd.Parameters.AddWithValue("@correo",    string.IsNullOrEmpty(a.Correo)        ? DBNull.Value : (object)a.Correo);
+            cmd.Parameters.AddWithValue("@telefono",  string.IsNullOrEmpty(a.Telefono)      ? DBNull.Value : (object)a.Telefono);
+            cmd.Parameters.Add("@fecha", SqlDbType.DateTime2).Value =
+                a.FechaNacimiento.HasValue ? a.FechaNacimiento.Value : DBNull.Value;
+            cmd.Parameters.AddWithValue("@calle",     string.IsNullOrEmpty(a.Calle)         ? DBNull.Value : (object)a.Calle);
+            cmd.Parameters.AddWithValue("@colonia",   string.IsNullOrEmpty(a.Colonia)       ? DBNull.Value : (object)a.Colonia);
+            cmd.Parameters.AddWithValue("@ciudad",    string.IsNullOrEmpty(a.Ciudad)        ? DBNull.Value : (object)a.Ciudad);
+            cmd.Parameters.AddWithValue("@cp",        string.IsNullOrEmpty(a.CodigoPostal)  ? DBNull.Value : (object)a.CodigoPostal);
+            cmd.Parameters.AddWithValue("@nac",       string.IsNullOrEmpty(a.Nacionalidad)  ? DBNull.Value : (object)a.Nacionalidad);
+            cmd.Parameters.AddWithValue("@estilo",    string.IsNullOrEmpty(a.EstiloPredominante) ? DBNull.Value : (object)a.EstiloPredominante);
+            cmd.Parameters.AddWithValue("@bio",       string.IsNullOrEmpty(a.Biografia)     ? DBNull.Value : (object)a.Biografia);
         }
     }
 }

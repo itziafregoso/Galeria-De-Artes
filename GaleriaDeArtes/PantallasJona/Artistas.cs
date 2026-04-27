@@ -69,7 +69,7 @@ namespace GaleriaDeArtes
         {
             if (dgvArtistas.CurrentRow == null) return;
 
-            string nombre = dgvArtistas.CurrentRow.Cells["Nombre Completo"].Value?.ToString() ?? "";
+            string nombre    = $"{dgvArtistas.CurrentRow.Cells["Nombre"].Value} {dgvArtistas.CurrentRow.Cells["Apellido Paterno"].Value}".Trim();
             int id = Convert.ToInt32(dgvArtistas.CurrentRow.Cells["id_artista"].Value);
 
             bool eliminarPinturas = false;

@@ -1,4 +1,4 @@
--- ============================================================
+claude-- ============================================================
 -- Script: CrearTablas.sql
 -- Base de datos: GaleriaArte
 -- Crea las tablas necesarias para el módulo de ventas/compras.
